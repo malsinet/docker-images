@@ -5,13 +5,12 @@
 
 * Resumen
 
-El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo lugar donde se pueda explicar en detalle qué hace cada imagen y que sirva además para generar los dockerfiles necesarios.
+El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo lugar donde se pueda explicar en detalle qué componentes tiene cada imagen y que sirva además para generar los dockerfiles necesarios.
 
 ** Quickstart
+*** Paso 1: Generar carpetas
 
-Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando cicla por todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. Luego se debe entrar en la carpeta deseada y ejecutar el comando =docker build <tag> .= para generar la imagen.
-
-** Folder setup
+Lo primero que debemos hacer es generar la estructura de carpetas en donde se colocarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
 
 #+BEGIN_SRC sh
 
@@ -30,16 +29,32 @@ mkdir -p ./build/texlive
 
 #+RESULTS:
 
+*** Paso 2: Generar dockerfiles
+
+Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando cicla por todos los bloques de código de este documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
+
+Una vez generados los dockerfiles se puede entrar en la carpeta deseada y ejecutar el comando =docker build <tag> .= para generar la imagen.
+
 * Lenguajes de programación
 ** php
+
+Las imágenes de PHP se generan a partir de las oficiales, a las que les agrego las siguientes extensiones:
+
+- pdo
+- pdo_mysql
+- pdo_pgsql
+- xdebug
+
 *** version-5.6
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5-6/Dockerfile
 FROM php:5.6-apache
 MAINTAINER Martin Alsinet <martin@alsinet.com.ar>
 
+RUN apt-get update
+RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
-RUN docker-php-ext-install pdo pdo_mysql xdebug
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql xdebug
 
 WORKDIR /var/www/html
 
@@ -65,6 +80,8 @@ CMD ["apache2-foreground"]
 #+END_SRC
 
 ** python
+*** version-2.7
+*** version-3.6
 ** node
 ** mit-scheme
 
@@ -89,7 +106,7 @@ ENTRYPOINT ["mit-scheme"]
 * Utilidades
 ** texlive
 
-#+BEGIN_SRC texlive :exports code :padline no :tangle build/texlive/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
 MAINTAINER Martin Alsinet <martin at alsinet dot com dot ar>
 
