@@ -33,7 +33,7 @@ mkdir -p ./build/texlive
 
 Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando cicla por todos los bloques de código de este documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
 
-Una vez generados los dockerfiles se puede entrar en la carpeta deseada y ejecutar el comando =docker build <tag> .= para generar la imagen.
+Una vez generados los dockerfiles se puede entrar en la carpeta deseada (p.ej., =cd ./build/php/5-6=) y ejecutar el comando =docker build malsinet/php:5.6-apache .= para generar la imagen. Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento para que se entienda mejor.
 
 * Lenguajes de programación
 ** php
@@ -49,7 +49,7 @@ Las imágenes de PHP se generan a partir de las oficiales, a las que les agrego 
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5-6/Dockerfile
 FROM php:5.6-apache
-MAINTAINER Martin Alsinet <martin@alsinet.com.ar>
+MAINTAINER Martin Alsinet <martin>
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
@@ -66,7 +66,7 @@ CMD ["apache2-foreground"]
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7/Dockerfile
 FROM php:7-apache
-MAINTAINER Martin Alsinet <martin@alsinet.com.ar>
+MAINTAINER Martin Alsinet <martin>
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
@@ -88,7 +88,7 @@ CMD ["apache2-foreground"]
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/mit-scheme/Dockerfile
 FROM debian:8.3
 
-MAINTAINER Martin Alsinet <martin at alsinet dot com dot ar>
+MAINTAINER Martin Alsinet <martin>
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -108,7 +108,7 @@ ENTRYPOINT ["mit-scheme"]
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
-MAINTAINER Martin Alsinet <martin at alsinet dot com dot ar>
+MAINTAINER Martin Alsinet <martin>
 
 ENV DEBIAN_FRONTEND noninteractive
 
