@@ -5,7 +5,7 @@
 
 * Resumen
 
-El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo lugar donde se pueda explicar en detalle qué componentes tiene cada imagen y que sirva además para generar los dockerfiles necesarios.
+El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo archivo en el que además se pueda explicar en detalle qué componentes tiene cada imagen y que sirva para generar los dockerfiles necesarios.
 
 ** Quickstart
 *** Paso 1: Generar carpetas
@@ -16,7 +16,7 @@ Lo primero que debemos hacer es generar la estructura de carpetas en donde se co
 
 rm -Rf ./build
 mkdir -p ./build/php/5-6 ./build/php/7
-mkdir -p ./build/python/2.7
+mkdir -p ./build/python/2-7 ./build/python/3-6
 mkdir -p ./build/node
 mkdir -p ./build/mit-scheme
 mkdir -p ./build/postgres
@@ -31,9 +31,9 @@ mkdir -p ./build/texlive
 
 *** Paso 2: Generar dockerfiles
 
-Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando cicla por todos los bloques de código de este documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
+Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando busca todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
 
-Una vez generados los dockerfiles se puede entrar en la carpeta deseada (p.ej., =cd ./build/php/5-6=) y ejecutar el comando =docker build malsinet/php:5.6-apache .= para generar la imagen. Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento para que se entienda mejor.
+Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/5-6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con la correspondiente documentación.
 
 * Lenguajes de programación
 ** php
@@ -49,12 +49,14 @@ Las imágenes de PHP se generan a partir de las oficiales, a las que les agrego 
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5-6/Dockerfile
 FROM php:5.6-apache
-MAINTAINER Martin Alsinet <martin>
+MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql xdebug
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /var/www/html
 
@@ -66,12 +68,14 @@ CMD ["apache2-foreground"]
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7/Dockerfile
 FROM php:7-apache
-MAINTAINER Martin Alsinet <martin>
+MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /var/www/html
 
@@ -80,15 +84,53 @@ CMD ["apache2-foreground"]
 #+END_SRC
 
 ** python
+
+Las imágenes de python se crean a partir de las oficiales, con los siguientes agregados:
+
+- pip: upgrade a versión 9 (por defecto viene con la 8.1.2)
+- pew: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
+- bpython: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
+- shell: se crea un alias para ll y se configura la variable de entorno $SHELL
+
 *** version-2.7
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/2-7/Dockerfile
+FROM python:2.7
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN pip install --upgrade pip
+RUN pip install pew bpython
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["/bin/bash"]
+#+END_SRC
+
 *** version-3.6
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/3-6/Dockerfile
+FROM python:3.6
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN pip install --upgrade pip
+RUN pip install pew bpython
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL /bin/bash" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["/bin/bash"]
+#+END_SRC
+
 ** node
 ** mit-scheme
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/mit-scheme/Dockerfile
 FROM debian:8.3
 
-MAINTAINER Martin Alsinet <martin>
+MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -108,7 +150,7 @@ ENTRYPOINT ["mit-scheme"]
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
-MAINTAINER Martin Alsinet <martin>
+MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV DEBIAN_FRONTEND noninteractive
 
