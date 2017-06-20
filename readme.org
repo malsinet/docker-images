@@ -6,13 +6,13 @@
 * Quickstart
 ** Summary
 
-El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo archivo en el que además se pueda explicar en detalle qué componentes tiene cada imagen.
+El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts para generarlas en un solo archivo en el que además se pueda documentar qué componentes tiene cada imagen.
 
-Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite generar los dockerfiles directamente desde este documento, gracias a las facilidades de *org-mode*. En caso de no utilizar emacs, se puede consultar el código de los dockerfiles y luego copiar-y-pegar el código del dockerfile deseado en un archivo para generar la imagen.
+Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite generar los dockerfiles directamente desde este documento, gracias a las facilidades de *org-mode*. En caso de no utilizar emacs, se puede consultar el código de los dockerfiles y luego copiar-y-pegar el código del dockerfile deseado en un archivo para generar la imagen correspondiente.
 
-Al tener las aplicaciones dockerizadas es posible ejecutarlas dentro de un contenedor efímero (--rm) y de esta manera tener comandos disponibles (composer, npm) sin necesidad instalar todas las dependencias de cada herramienta en el sistema local. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Este documento permite también generar los scripts para utilizar éstos comandos dockerizados que se guardan en =~/bin=.
+Una ventaja de tener herramientas dockerizadas (p.ej. como composer o npm) es que es posible ejecutarlas dentro de un contenedor efímero (--rm) y de esta manera tener los comandos disponibles sin necesidad instalar nada en el sistema local. Todas las dependencias quedan completamente aisladas dentro de la imagen. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Con este documento también se pueden generar los scripts para utilizar los comandos dockerizados de esta manera, que se guardan en =~/bin=.
 
-** Paso 1: Generar carpetas
+** Paso 1: Generar carpeta build
 
 Lo primero que debemos hacer es generar la estructura de carpetas en donde se colocarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
 
@@ -38,11 +38,11 @@ mkdir -p ./build/texlive
 
 Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando busca todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
 
-Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/5-6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con la correspondiente documentación.
+Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/version-5.6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con su documentación.
 
-** Paso 3: Generar launcher scripts
+** Paso 3: Generar comandos dockerizadosc
 
-Finalmente copiamos los scripts a la carpeta =~/bin= de modo que queden disponibles para su uso, ejecutando el siguiente bloque de código con =C-c C-c=.
+Finalmente copiamos los comandos a la carpeta =~/bin= de modo que queden disponibles para su uso, ejecutando el siguiente bloque de código con =C-c C-c=.
 
 #+BEGIN_SRC sh
 chmod +x ./build/bin/*
