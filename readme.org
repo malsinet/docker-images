@@ -3,51 +3,73 @@
 #+AUTHOR: Martín Alsinet
 #+DATE: 2017
 
-* Resumen
+* Quickstart
+** Summary
 
-El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo archivo en el que además se pueda explicar en detalle qué componentes tiene cada imagen y que sirva para generar los dockerfiles necesarios.
+El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts en un solo archivo en el que además se pueda explicar en detalle qué componentes tiene cada imagen.
 
-** Quickstart
-*** Paso 1: Generar carpetas
+Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite generar los dockerfiles directamente desde este documento, gracias a las facilidades de *org-mode*. En caso de no utilizar emacs, se puede consultar el código de los dockerfiles y luego copiar-y-pegar el código del dockerfile deseado en un archivo para generar la imagen.
+
+Al tener las aplicaciones dockerizadas es posible ejecutarlas dentro de un contenedor efímero (--rm) y de esta manera tener comandos disponibles (composer, npm) sin necesidad instalar todas las dependencias de cada herramienta en el sistema local. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Este documento permite también generar los scripts para utilizar éstos comandos dockerizados que se guardan en =~/bin=.
+
+** Paso 1: Generar carpetas
 
 Lo primero que debemos hacer es generar la estructura de carpetas en donde se colocarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
 
 #+BEGIN_SRC sh
 
 rm -Rf ./build
-mkdir -p ./build/php/5-6 ./build/php/7
-mkdir -p ./build/python/2-7 ./build/python/3-6
-mkdir -p ./build/node
+mkdir -p ./build/bin
+mkdir -p ./build/php/version-5.6 ./build/php/version-7 ./build/php/composer
+mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
+mkdir -p ./build/node/version-6.11 ./build/node/version-8.1
 mkdir -p ./build/mit-scheme
-mkdir -p ./build/postgres
-mkdir -p ./build/pgadmin4
-mkdir -p ./build/mysql
-mkdir -p ./build/phpmyadmin
+mkdir -p ./build/db/postgres
+mkdir -p ./build/db/pgadmin4
+mkdir -p ./build/db/mysql
+mkdir -p ./build/db/phpmyadmin
 mkdir -p ./build/texlive
 
 #+END_SRC
 
 #+RESULTS:
 
-*** Paso 2: Generar dockerfiles
+** Paso 2: Generar dockerfiles
 
 Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando busca todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
 
 Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/5-6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con la correspondiente documentación.
 
-* Lenguajes de programación
-** php
+** Paso 3: Generar launcher scripts
 
-Las imágenes de PHP se generan a partir de las oficiales, a las que les agrego las siguientes extensiones:
+Finalmente copiamos los scripts a la carpeta =~/bin= de modo que queden disponibles para su uso, ejecutando el siguiente bloque de código con =C-c C-c=.
 
-- pdo
-- pdo_mysql
-- pdo_pgsql
-- xdebug
+#+BEGIN_SRC sh
+chmod +x ./build/bin/*
+mkdir -p ~/bin
+cp ./build/bin/* ~/bin
+#+END_SRC
 
-*** version-5.6
+#+RESULTS:
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5-6/Dockerfile
+* Images
+** Lenguajes de programación
+*** php
+
+Las imágenes de PHP se generan a partir de las imágenes oficiales, a las que les hago las siguientes modificaciones:
+
+- *apache*: mod_rewrite activado
+- *PATH*: se agrega =/var/www/vendor/bin= (carpeta con comandos instalados por composer)
+- *shell*: se crea un alias para ll y se configura la variable de entorno $SHELL
+- *extensiones de PHP*:
+  - pdo
+  - pdo_mysql
+  - pdo_pgsql
+  - xdebug
+
+**** version-5.6
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-5.6/Dockerfile
 FROM php:5.6-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -57,6 +79,7 @@ RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql xdebug
 RUN echo "alias ll='ls -alh'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
 
 WORKDIR /var/www/html
 
@@ -64,9 +87,9 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-*** version-7
+**** version-7
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7/Dockerfile
 FROM php:7-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -76,6 +99,7 @@ RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 RUN echo "alias ll='ls -alh'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
 
 WORKDIR /var/www/html
 
@@ -83,18 +107,29 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-** python
+**** composer
 
-Las imágenes de python se crean a partir de las oficiales, con los siguientes agregados:
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/composer/Dockerfile
+FROM composer/composer:alpine
+MAINTAINER Martin Alsinet <martin@alsinet>
 
-- pip: upgrade a versión 9 (por defecto viene con la 8.1.2)
-- pew: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
-- bpython: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
-- shell: se crea un alias para ll y se configura la variable de entorno $SHELL
+WORKDIR /app
 
-*** version-2.7
+CMD ["composer"]
+#+END_SRC
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/2-7/Dockerfile
+*** python
+
+Las imágenes de python se crean a partir de las imágenes oficiales, con los siguientes agregados:
+
+- *pip*: upgrade a versión 9 (por defecto viene con la 8.1.2)
+- *pew*: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
+- *bpython*: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
+- *shell*: se crea un alias para ll y se configura la variable de entorno $SHELL
+
+**** version-2.7
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/version-2.7/Dockerfile
 FROM python:2.7
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -108,24 +143,53 @@ WORKDIR /app
 CMD ["/bin/bash"]
 #+END_SRC
 
-*** version-3.6
+**** version-3.6
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/3-6/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/version-3.6/Dockerfile
 FROM python:3.6
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
 RUN pip install pew bpython
 RUN echo "alias ll='ls -alh'" >> /root/.bashrc
-RUN echo "export SHELL /bin/bash" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /app
 
 CMD ["/bin/bash"]
 #+END_SRC
 
-** node
-** mit-scheme
+*** node
+
+**** version-8.1
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.1/Dockerfile
+FROM node:8.1
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["/bin/bash"]
+#+END_SRC
+
+**** version-6.11
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-6.11/Dockerfile
+FROM node:6.11
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["/bin/bash"]
+#+END_SRC
+
+*** mit-scheme
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/mit-scheme/Dockerfile
 FROM debian:8.3
@@ -134,19 +198,19 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && \
-    apt-get install -y mit-scheme
+RUN apt-get update
+RUN apt-get install -y mit-scheme
 
 ENTRYPOINT ["mit-scheme"]
 #+END_SRC
 
-* Bases de datos
-** postgres
-** pgadmin4
-** mysql
-** phpmyadmin
-* Utilidades
-** texlive
+** Bases de datos
+*** postgres
+*** pgadmin4
+*** mysql
+*** phpmyadmin
+** Utilidades
+*** texlive
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
@@ -161,3 +225,48 @@ RUN apt-get update -q && \
     rm -rf /var/lib/apt/lists/*
 #+END_SRC
 
+* Launcher Scripts
+** composer
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/composer $@
+#+END_SRC
+
+** mit-scheme
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/mit-scheme
+#!/bin/sh
+docker run --rm -ti malsinet/mit-scheme $@
+#+END_SRC
+
+** npm-6.11
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-6.11
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:6.11 npm $@
+#+END_SRC
+
+** npm-8.1
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-8.1
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:8.1 npm $@
+#+END_SRC
+
+** pdflatex
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pdflatex
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v /Users/martin:/Users/martin -v ~/.ssh:/root/.ssh -w /app malsinet/latex pdflatex $@
+#rm *.log *.aux 
+#ls *.ent && rm *.ent
+#+END_SRC
