@@ -3,8 +3,8 @@
 #+AUTHOR: Martín Alsinet
 #+DATE: 2017
 
-* Quickstart
-** Summary
+* Resumen
+** Motivación
 
 El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts para generarlas en un solo archivo en el que además se pueda documentar qué componentes tiene cada imagen.
 
@@ -40,7 +40,7 @@ Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-t
 
 Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/version-5.6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con su documentación.
 
-** Paso 3: Generar comandos dockerizadosc
+** Paso 3: Generar comandos dockerizados
 
 Finalmente copiamos los comandos a la carpeta =~/bin= de modo que queden disponibles para su uso, ejecutando el siguiente bloque de código con =C-c C-c=.
 
@@ -52,7 +52,7 @@ cp ./build/bin/* ~/bin
 
 #+RESULTS:
 
-* Images
+* Imágenes
 ** Lenguajes de programación
 *** php
 
@@ -225,7 +225,7 @@ RUN apt-get update -q && \
     rm -rf /var/lib/apt/lists/*
 #+END_SRC
 
-* Launcher Scripts
+* Comandos Dockerizados
 ** composer
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
@@ -266,7 +266,16 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:8.1 npm $@
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v /Users/martin:/Users/martin -v ~/.ssh:/root/.ssh -w /app malsinet/latex pdflatex $@
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -w /app malsinet/latex pdflatex $@
 #rm *.log *.aux 
 #ls *.ent && rm *.ent
+#+END_SRC
+
+** gnuplot
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/gnuplot
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -w /app malsinet/latex gnuplot $@
 #+END_SRC
