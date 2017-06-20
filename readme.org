@@ -1,5 +1,5 @@
 
-#+TITLE: Docker Image Repository
+#+TITLE: Docker Images
 #+AUTHOR: Martín Alsinet
 #+DATE: 2017
 
@@ -8,9 +8,9 @@
 
 El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts para generarlas en un solo archivo en el que además se pueda documentar qué componentes tiene cada imagen.
 
-Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite generar los dockerfiles directamente desde este documento, gracias a las facilidades de *org-mode*. En caso de no utilizar emacs, se puede consultar el código de los dockerfiles y luego copiar-y-pegar el código del dockerfile deseado en un archivo para generar la imagen correspondiente.
+Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite generar los dockerfiles directamente desde este documento, gracias a las facilidades de *org-mode*. En caso de no utilizar emacs, se puede consultar el código del dockerfile deseado y luego copiar-y-pegar el código en un archivo para generar la imagen correspondiente.
 
-Una ventaja de tener herramientas dockerizadas (p.ej. como composer o npm) es que es posible ejecutarlas dentro de un contenedor efímero (--rm) y de esta manera tener los comandos disponibles sin necesidad instalar nada en el sistema local. Todas las dependencias quedan completamente aisladas dentro de la imagen. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Con este documento también se pueden generar los scripts para utilizar los comandos dockerizados de esta manera, que se guardan en =~/bin=.
+Una ventaja de tener herramientas dockerizadas (p.ej. como composer o npm) es que es posible ejecutarlas dentro de un contenedor efímero (=--rm=) y de esta manera tener los comandos disponibles sin necesidad instalar nada en el sistema local. Todas las dependencias quedan completamente aisladas dentro de la imagen. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Con este documento también se pueden generar los scripts para utilizar los comandos dockerizados de esta manera, que se guardan en =~/bin=.
 
 ** Paso 1: Generar carpeta build
 
@@ -77,7 +77,7 @@ RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql xdebug
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
 
@@ -97,7 +97,7 @@ RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
 
@@ -135,7 +135,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
 RUN pip install pew bpython
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /app
@@ -151,7 +151,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
 RUN pip install pew bpython
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /app
@@ -167,7 +167,7 @@ CMD ["/bin/bash"]
 FROM node:8.1
 MAINTAINER Martin Alsinet <martin@alsinet>
 
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /app
@@ -181,7 +181,7 @@ CMD ["/bin/bash"]
 FROM node:6.11
 MAINTAINER Martin Alsinet <martin@alsinet>
 
-RUN echo "alias ll='ls -alh'" >> /root/.bashrc
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
 
 WORKDIR /app
@@ -267,8 +267,8 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:8.1 npm $@
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
 docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -w /app malsinet/latex pdflatex $@
-#rm *.log *.aux 
-#ls *.ent && rm *.ent
+rm *.log *.aux 
+rm -f *.ent
 #+END_SRC
 
 ** gnuplot
