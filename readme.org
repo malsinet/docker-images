@@ -2,6 +2,8 @@
 #+TITLE: Docker Images
 #+AUTHOR: Martín Alsinet
 #+DATE: 2017
+#+OPTIONS: toc:nil ':t num:nil
+#+LANGUAGE: es
 
 * Resumen
 ** Motivación
@@ -58,14 +60,14 @@ cp ./build/bin/* ~/bin
 
 Las imágenes de PHP se generan a partir de las imágenes oficiales, a las que les hago las siguientes modificaciones:
 
-- *apache*: mod_rewrite activado
-- *PATH*: se agrega =/var/www/vendor/bin= (carpeta con comandos instalados por composer)
-- *shell*: se crea un alias para ll y se configura la variable de entorno $SHELL
+- *apache*: =mod_rewrite= activado
+- *$PATH*: se agrega =/var/www/vendor/bin= (carpeta con comandos instalados por composer)
+- *bash*: se crea un alias para ll y se configura la variable de entorno =$SHELL=
 - *extensiones de PHP*:
-  - pdo
-  - pdo_mysql
-  - pdo_pgsql
-  - xdebug
+  + =pdo=
+  + =pdo_mysql=
+  + =pdo_pgsql=
+  + =xdebug=
 
 **** version-5.6
 
@@ -125,7 +127,7 @@ Las imágenes de python se crean a partir de las imágenes oficiales, con los si
 - *pip*: upgrade a versión 9 (por defecto viene con la 8.1.2)
 - *pew*: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
 - *bpython*: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
-- *shell*: se crea un alias para ll y se configura la variable de entorno $SHELL
+- *bash*: se crea un alias para ll y se configura la variable de entorno =$SHELL=
 
 **** version-2.7
 
@@ -266,7 +268,7 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:8.1 npm $@
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -w /app malsinet/latex pdflatex $@
+docker run --rm -v $(pwd):$(pwd) -v ~/.ssh:/root/.ssh -w $(pwd) malsinet/latex pdflatex $@
 rm *.log *.aux 
 rm -f *.ent
 #+END_SRC
@@ -277,5 +279,5 @@ rm -f *.ent
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -w /app malsinet/latex gnuplot $@
+docker run --rm -v $(pwd):$(pwd) -v ~/.ssh:/root/.ssh -w $(pwd) malsinet/latex gnuplot $@
 #+END_SRC
