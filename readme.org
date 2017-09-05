@@ -24,7 +24,9 @@ rm -Rf ./build
 mkdir -p ./build/bin
 mkdir -p ./build/php/version-5.6 ./build/php/version-7 ./build/php/composer
 mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
-mkdir -p ./build/node/version-6.11 ./build/node/version-8.1
+mkdir -p ./build/node/version-6.11 ./build/node/version-8.4
+mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
+mkdir -p ./build/java/version-8-jre ./build/java/version-8-jdk
 mkdir -p ./build/mit-scheme
 mkdir -p ./build/db/postgres
 mkdir -p ./build/db/pgadmin4
@@ -82,8 +84,8 @@ RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 RUN pecl install xdebug
 RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
-RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/var/www/vendor/bin
 
 WORKDIR /var/www/html
 
@@ -101,10 +103,11 @@ RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
+RUN pecl install xdebug
 RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20151012/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
-RUN echo "export PATH=$PATH:/var/www/vendor/bin" >> /root/.bashrc
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/var/www/vendor/bin
 
 WORKDIR /var/www/html
 
@@ -165,18 +168,19 @@ CMD ["/bin/bash"]
 #+END_SRC
 
 *** node
+**** version-8.4
 
-**** version-8.1
-
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.1/Dockerfile
-FROM node:8.1
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.4/Dockerfile
+FROM node:8.4
 MAINTAINER Martin Alsinet <martin@alsinet>
 
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/app/node_modules/.bin
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 
 WORKDIR /app
 
-CMD ["/bin/bash"]
+CMD ["npm", "start"]
 #+END_SRC
 
 **** version-6.11
@@ -185,11 +189,70 @@ CMD ["/bin/bash"]
 FROM node:6.11
 MAINTAINER Martin Alsinet <martin@alsinet>
 
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/app/node_modules/.bin
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 
 WORKDIR /app
 
-CMD ["/bin/bash"]
+CMD ["npm", "start"]
+#+END_SRC
+
+*** java
+**** version-7-jre
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-7-jre/Dockerfile
+FROM openjdk:7-jre
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
+#+END_SRC
+
+**** version-7-jdk
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-7-jdk/Dockerfile
+FROM openjdk:7-jdk
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
+#+END_SRC
+
+**** version-8-jre
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-8-jre/Dockerfile
+FROM openjdk:8-jre
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
+#+END_SRC
+
+**** version-8-jdk
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-8-jdk/Dockerfile
+FROM openjdk:8-jdk
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
 #+END_SRC
 
 *** mit-scheme
@@ -238,22 +301,78 @@ echo "Current working directory: '"$(pwd)"'"
 docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/composer $@
 #+END_SRC
 
-** npm-6.11
+** java
+*** java-7-jre
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-6.11
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jre
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:6.11 npm $@
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jre java $@
 #+END_SRC
 
-** npm-8.1
+*** java-7-jdk
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-8.1
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jdk
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/node:8.1 npm $@
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jdk java $@
+#+END_SRC
+
+*** java-8-jre
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jre
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jre java $@
+#+END_SRC
+
+*** java-8-jdk
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jdk
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jdk java $@
+#+END_SRC
+
+** node
+*** npm-node-8.4
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.4
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8.4 npm $@
+#+END_SRC
+
+*** node-8.4
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-8.4
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8.4 node $@
+#+END_SRC
+
+*** npm-node-6.11
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-6.11
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6.11 npm $@
+#+END_SRC
+
+*** node-6.11
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-6.11
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+echo "Current working directory: '"$(pwd)"'"
+docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6.11 node $@
 #+END_SRC
 
 ** pdflatex
