@@ -144,7 +144,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 RUN pip install --upgrade pip
 RUN pip install pew bpython
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+ENV SHELL=/bin/bash
 
 WORKDIR /app
 
@@ -160,7 +160,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 RUN pip install --upgrade pip
 RUN pip install pew bpython
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-RUN echo "export SHELL=/bin/bash" >> /root/.bashrc
+ENV SHELL=/bin/bash
 
 WORKDIR /app
 
@@ -292,13 +292,76 @@ RUN apt-get update -q && \
 #+END_SRC
 
 * Comandos Dockerizados
+
+Estos comandos permiten utilizar las distintas herramientas sin "contaminar" la máquina local con la instalación de cientos de paquetes, como sucede, por ejemplo, cuando se instala python, php o nodejs con todas sus dependencias. Esto se logra con un script "lanzador" que ejecuta la utilidad dentro de un contenedor efímero (~docker run --rm~), que se borra luego de cada ejecución del comando. Todas las dependencias y paquetes quedan dentro de la imagen correspondiente.
+
+Hay algunos trucos para lograr una integración completa con el entorno, a saber:
+
+- Montar la carpeta =~/.ssh=: Esto se hace para copiar dentro del contenedor la configuración local de .ssh, que sirve por ejemplo cuando el contenedor accede a repositorios privados en github o bitbucket
+
+- Montar la carpeta =/private/var/folders=: En Mac OS X se utiliza la carpeta =/private/var/folders= como destino de los archivos y carpetas temporales
+
+- Montar la carpeta desde donde se lanza el comando como =/app=: Esto permite, por ejemplo, ejecutar =composer install= o =npm install= desde la carpeta de nuestro proyecto
+
 ** composer
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/composer $@
+docker run --rm \ 
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           malsinet/composer $@
+#+END_SRC
+
+** php
+*** php-5.6
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-5.6
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/php:5.6-apache php $@
+#+END_SRC
+
+*** php-7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/php:7-apache php $@
+#+END_SRC
+
+** python
+*** python-2.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:2.7 python $@
+#+END_SRC
+
+*** python-3.6
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:3.6 python $@
 #+END_SRC
 
 ** java
@@ -307,8 +370,10 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/composer $@
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jre
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jre java $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           malsinet/java:7-jre java $@
 #+END_SRC
 
 *** java-7-jdk
@@ -316,8 +381,10 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jre java $@
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jdk
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jdk java $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           malsinet/java:7-jdk java $@
 #+END_SRC
 
 *** java-8-jre
@@ -325,8 +392,10 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-7-jdk java $@
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jre
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jre java $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           malsinet/java:8-jre java $@
 #+END_SRC
 
 *** java-8-jdk
@@ -334,8 +403,10 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jre java $@
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jdk
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jdk java $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           malsinet/java:8-jdk java $@
 #+END_SRC
 
 ** node
@@ -344,8 +415,13 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh malsinet/java-8-jdk java $@
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.4
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8.4 npm $@
+docker run --rm -ti \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -p 8080:8080 \
+           malsinet/node:8.4 \
+           npm $@
 #+END_SRC
 
 *** node-8.4
@@ -353,8 +429,13 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-8.4
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8.4 node $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -p 8080:8080 \
+           malsinet/node:8.4 \
+           node $@
 #+END_SRC
 
 *** npm-node-6.11
@@ -362,8 +443,13 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:8
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-6.11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6.11 npm $@
+docker run --rm -ti \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -p 8080:8080 \
+           malsinet/node:6.11 \
+           npm $@
 #+END_SRC
 
 *** node-6.11
@@ -371,8 +457,25 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-6.11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6.11 node $@
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -p 8080:8080 \
+           malsinet/node:6.11 \
+           node $@
+#+END_SRC
+
+** mit-scheme
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/mit-scheme
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -ti \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/mit-scheme
 #+END_SRC
 
 ** pdflatex
@@ -380,8 +483,13 @@ docker run --rm -v $(pwd):/app -v ~/.ssh:/root/.ssh -p 8080:8080 malsinet/node:6
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pdflatex
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):$(pwd) -v ~/.ssh:/root/.ssh -w $(pwd) malsinet/latex pdflatex $@
+docker run --rm \
+           -v $(pwd):$(pwd) \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -w $(pwd) \
+           malsinet/latex \
+           pdflatex $@
 rm *.log *.aux 
 rm -f *.ent
 #+END_SRC
@@ -391,6 +499,10 @@ rm -f *.ent
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/gnuplot
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-echo "Current working directory: '"$(pwd)"'"
-docker run --rm -v $(pwd):$(pwd) -v ~/.ssh:/root/.ssh -w $(pwd) malsinet/latex gnuplot $@
+docker run --rm \
+       -v $(pwd):$(pwd) \
+       -v ~/.ssh:/root/.ssh \
+       -w $(pwd) \
+       malsinet/latex \
+       gnuplot $@
 #+END_SRC
