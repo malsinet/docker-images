@@ -38,13 +38,17 @@ mkdir -p ./build/texlive
 
 #+RESULTS:
 
-** Paso 2: Generar dockerfiles
+** Paso 2: Generar dockerfiles y comandos
 
 Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando busca todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
 
-Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/version-5.6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. Con el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con su documentación.
+Una vez generados los dockerfiles se puede generar la imagen deseada ingresando en la carpeta correspondiente (p.ej., =cd ./build/php/version-5.6=) y ejecutando el comando *docker build* (p.ej., =docker build malsinet/php:5.6-apache .=). Dado que el código fuente de los dockerfiles se encuentra en este documento, la carpeta build se utiliza como almacenamiento temporal para construir las imágenes y está incluida en el =.gitignore= del repositorio. 
 
-** Paso 3: Generar comandos dockerizados
+Usando el comando *org-babel-tangle* se pueden regenerar los dockerfiles cada vez que sea necesario, manteniendo las fuentes en el documento junto con su documentación.
+
+Además de los dockerfiles, en la carpeta =./build/bin= se generan varios scripts para utilizar las herramientas que proporcionan las imágenes sin instalar nada en la máquina local, ejecutando cada comando directamente desde la imagen.
+
+** Paso 3: Copiar comandos dockerizados a ~/bin
 
 Finalmente copiamos los comandos a la carpeta =~/bin= de modo que queden disponibles para su uso, ejecutando el siguiente bloque de código con =C-c C-c=.
 
@@ -352,6 +356,18 @@ docker run --rm \
            malsinet/python:2.7 python $@
 #+END_SRC
 
+*** bpython-2.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/bpython-2.7
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -it \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:2.7 bpython $@
+#+END_SRC
+
 *** python-3.6
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6
@@ -362,6 +378,18 @@ docker run --rm \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            malsinet/python:3.6 python $@
+#+END_SRC
+
+*** bpython-3.6
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/bpython-3.6
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -ti \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:3.6 bpython $@
 #+END_SRC
 
 ** java
