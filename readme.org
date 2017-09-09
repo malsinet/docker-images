@@ -344,6 +344,9 @@ docker run --rm \
 #+END_SRC
 
 ** python
+
+Para python agrego la variable de entorno =PYTHONPATH= que me permite ejecutar cualquier proyecto cargando las dependencias desde la carpeta =./vendor=. De esta manera, uno puede instalar una vez las dependencias con =pip install -t vendor -r requirements.txt= y quedan en la carpeta =./vendor=. Dado que al ejecutar python el comando va a montar la carpeta local como =/app=, si respeto la convención de guardar siempre las dependencias en =./vendor=, siempre serán montadas como =/app/vendor= dentro del contenedor. Por lo tanto, configurando la variable de entorno =PYTHONPATH= con el valor =/app/vendor= me aseguro que python siempre pueda encontrar los módulos que se requieren para ejecutar la aplicación.
+
 *** python-2.7
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7
@@ -353,7 +356,21 @@ docker run --rm \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
            malsinet/python:2.7 python $@
+#+END_SRC
+
+*** pip-2.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-2.7
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
+           malsinet/python:2.7 pip $@
 #+END_SRC
 
 *** bpython-2.7
@@ -365,6 +382,7 @@ docker run --rm -it \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
            malsinet/python:2.7 bpython $@
 #+END_SRC
 
@@ -377,9 +395,22 @@ docker run --rm \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
            malsinet/python:3.6 python $@
 #+END_SRC
 
+*** pip-3.6
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.6
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
+           malsinet/python:3.6 pip $@
+#+END_SRC
 *** bpython-3.6
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/bpython-3.6
@@ -389,6 +420,7 @@ docker run --rm -ti \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
+           -e "PYTHONPATH=/app/vendor" \
            malsinet/python:3.6 bpython $@
 #+END_SRC
 
