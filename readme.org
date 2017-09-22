@@ -5,8 +5,7 @@
 #+OPTIONS: toc:nil ':t num:nil
 #+LANGUAGE: es
 
-* Resumen
-** Motivación
+* Motivación
 
 El objetivo de este documento es detallar las imágenes de Docker personalizadas que utilizo y centralizar los scripts para generarlas en un solo archivo en el que además se pueda documentar qué componentes tiene cada imagen.
 
@@ -14,12 +13,12 @@ Mi editor es [[https://www.gnu.org/software/emacs/][emacs]], y eso me permite ge
 
 Una ventaja de tener herramientas dockerizadas (p.ej. como composer o npm) es que es posible ejecutarlas dentro de un contenedor efímero (=--rm=) y de esta manera tener los comandos disponibles sin necesidad instalar nada en el sistema local. Todas las dependencias quedan completamente aisladas dentro de la imagen. Cada vez que se ejecuta el comando se crea un contenedor, se ejecuta el comando dentro del contenedor montando el directorio actual, y cuando termina la ejecución se borra el contenedor. Con este documento también se pueden generar los scripts para utilizar los comandos dockerizados de esta manera, que se guardan en =~/bin=.
 
+* Procedimiento
 ** Paso 1: Generar carpeta build
 
 Lo primero que debemos hacer es generar la estructura de carpetas en donde se colocarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
 
 #+BEGIN_SRC sh
-
 rm -Rf ./build
 mkdir -p ./build/bin
 mkdir -p ./build/php/version-5.6 ./build/php/version-7 ./build/php/composer
@@ -27,13 +26,14 @@ mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
 mkdir -p ./build/node/version-6.11 ./build/node/version-8.4
 mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
 mkdir -p ./build/java/version-8-jre ./build/java/version-8-jdk
+mkdir -p ./build/jupyter
+mkdir -p ./build/eve
 mkdir -p ./build/mit-scheme
 mkdir -p ./build/db/postgres
 mkdir -p ./build/db/pgadmin4
 mkdir -p ./build/db/mysql
 mkdir -p ./build/db/phpmyadmin
 mkdir -p ./build/texlive
-
 #+END_SRC
 
 #+RESULTS:
@@ -295,13 +295,62 @@ RUN apt-get update -q && \
     rm -rf /var/lib/apt/lists/*
 #+END_SRC
 
+*** Jupyter Notebook
+
+Jupyter Notebook es un entorno para Literate Programming, que permite escribir documentos con Markdown intercalado con bloques de texto que se ejecutan directamente dentro del documento.
+
+El soporte original de lenguajes de programación para Jupyter es Python, pero se pueden agregar motores para que soporte otros lenguajes de programación. En este caso le agrego soporte para ejecutar Javascript mediante nodejs.
+
+Basándonos en la imagen de python3.6 que ya tenemos construida instalamos además ZeroMQ y nodejs, lo que permite ejecutar código javascript dentro de Jupyter.
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/jupyter/Dockerfile
+FROM malsinet/python:3.6
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update -q
+RUN apt-get install -y libtool pkg-config build-essential autoconf automake
+RUN apt-get install -y libzmq-dev curl
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+RUN apt-get install -y nodejs
+RUN pip3 install jupyter
+WORKDIR "/tmp"
+RUN git clone https://github.com/notablemind/jupyter-nodejs.git
+WORKDIR "/tmp/jupyter-nodejs"
+RUN mkdir -p /root/.ipython/kernels/nodejs/
+RUN npm install && node install.js
+RUN npm run build
+RUN npm run build-ext
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
+#+END_SRC
+
+*** Eve
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/eve/Dockerfile
+FROM malsinet/node:8.4
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV DEBIAN_FRONTEND noninteractive
+
+WORKDIR "/app"
+RUN git clone https://github.com/witheve/Eve.git
+WORKDIR "/app/Eve"
+RUN git checkout 0.2
+RUN npm install --unsafe-perm
+
+CMD ["npm", "start"]
+#+END_SRC
+
 * Comandos Dockerizados
 
 Estos comandos permiten utilizar las distintas herramientas sin "contaminar" la máquina local con la instalación de cientos de paquetes, como sucede, por ejemplo, cuando se instala python, php o nodejs con todas sus dependencias. Esto se logra con un script "lanzador" que ejecuta la utilidad dentro de un contenedor efímero (~docker run --rm~), que se borra luego de cada ejecución del comando. Todas las dependencias y paquetes quedan dentro de la imagen correspondiente.
 
 Hay algunos trucos para lograr una integración completa con el entorno, a saber:
 
-- Montar la carpeta =~/.ssh=: Esto se hace para copiar dentro del contenedor la configuración local de .ssh, que sirve por ejemplo cuando el contenedor accede a repositorios privados en github o bitbucket
+- Montar la carpeta =~/.ssh=: Esto se hace para copiar dentro del contenedor la configuración local de ssh (claves públicas y hosts), que sirve por ejemplo cuando el contenedor accede a repositorios privados en github o bitbucket
 
 - Montar la carpeta =/private/var/folders=: En Mac OS X se utiliza la carpeta =/private/var/folders= como destino de los archivos y carpetas temporales
 
@@ -565,4 +614,27 @@ docker run --rm \
        -w $(pwd) \
        malsinet/latex \
        gnuplot $@
+#+END_SRC
+
+** jupyter
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/jupyter
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -ti \
+       -p 8888:8888 \
+       -v $(pwd):/app \
+       -w /app \
+       malsinet/jupyter \
+       jupyter notebook --ip=0.0.0.0 --allow-root
+#+END_SRC
+
+** eve
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/eve
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -ti \
+           -p 8080:8080 \
+           malsinet/eve
 #+END_SRC
