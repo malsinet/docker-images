@@ -23,7 +23,7 @@ rm -Rf ./build
 mkdir -p ./build/bin
 mkdir -p ./build/php/version-5.6 ./build/php/version-7 ./build/php/composer
 mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
-mkdir -p ./build/node/version-6.11 ./build/node/version-8.4
+mkdir -p ./build/node/version-6.11 ./build/node/version-8.9 ./build/node/version-9.1
 mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
 mkdir -p ./build/java/version-8-jre ./build/java/version-8-jdk
 mkdir -p ./build/jupyter
@@ -66,10 +66,10 @@ cp ./build/bin/* ~/bin
 
 Las imágenes de PHP se generan a partir de las imágenes oficiales, a las que les hago las siguientes modificaciones:
 
-- *apache*: =mod_rewrite= activado
-- *$PATH*: se agrega =/var/www/vendor/bin= (carpeta con comandos instalados por composer)
-- *bash*: se crea un alias para ll y se configura la variable de entorno =$SHELL=
-- *extensiones de PHP*:
+- apache :: =mod_rewrite= activado
+- $PATH :: se agrega =/var/www/vendor/bin= (carpeta con comandos instalados por composer)
+- bash :: se crea un alias para ll y se configura la variable de entorno =$SHELL=
+- extensiones de PHP :: se instalan las siguientes extensiones
   + =pdo=
   + =pdo_mysql=
   + =pdo_pgsql=
@@ -108,7 +108,7 @@ RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 RUN pecl install xdebug
-RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20151012/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
+RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20160303/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/var/www/vendor/bin
@@ -134,10 +134,10 @@ CMD ["composer"]
 
 Las imágenes de python se crean a partir de las imágenes oficiales, con los siguientes agregados:
 
-- *pip*: upgrade a versión 9 (por defecto viene con la 8.1.2)
-- *pew*: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
-- *bpython*: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
-- *bash*: se crea un alias para ll y se configura la variable de entorno =$SHELL=
+- pip :: upgrade a versión 9 (por defecto viene con la 8.1.2)
+- pew :: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
+- bpython :: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
+- bash :: se crea un alias para ll y se configura la variable de entorno =$SHELL=
 
 **** version-2.7
 
@@ -172,10 +172,30 @@ CMD ["/bin/bash"]
 #+END_SRC
 
 *** node
-**** version-8.4
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.4/Dockerfile
-FROM node:8.4
+La única diferencia con las imágenes oficiales es que agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen.
+
+Cuando se instalan paquetes con =npm install=, a veces se desea instalar comandos de consola, que se mantienen en la carpeta =./node_modules/.bin=. Mis [[Comandos Dockerizados][comandos dockerizados]] para npm y node montan la carpeta desde donde se lanza el comando como =/app= dentro del contenedor. Por lo tanto, si agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen, en los contenedores de node siempre van a estar disponibles los comandos de consola que se instalen con =npm install= sin necesidad de indicar el path absoluto del comando.
+
+**** version-9.1
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-9.1/Dockerfile
+FROM node:9.1
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/app/node_modules/.bin
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["npm", "start"]
+#+END_SRC
+
+**** version-8.9
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.9/Dockerfile
+FROM node:8.9
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -329,7 +349,7 @@ CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
 *** Eve
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/eve/Dockerfile
-FROM malsinet/node:8.4
+FROM malsinet/node:8.9
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -360,7 +380,7 @@ Hay algunos trucos para lograr una integración completa con el entorno, a saber
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \ 
+docker run --rm \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            malsinet/composer $@
@@ -530,9 +550,9 @@ docker run --rm \
 #+END_SRC
 
 ** node
-*** npm-node-8.4
+*** npm-node-9.1
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.4
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-9.1
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -540,14 +560,15 @@ docker run --rm \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:8.4 \
+           malsinet/node:9.1 \
            npm $@
 #+END_SRC
 
-*** node-8.4
+*** node-9.1
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-8.4
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-9.1
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -555,8 +576,41 @@ docker run --rm \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:8.4 \
+           malsinet/node:9.1 \
+           node $@
+#+END_SRC
+
+*** npm-node-8.9
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.9
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:8.9 \
+           npm $@
+#+END_SRC
+
+*** node-8.9
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-8.9
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:8.9 \
            node $@
 #+END_SRC
 
@@ -570,6 +624,7 @@ docker run --rm \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
            -p 8080:8080 \
            malsinet/node:6.11 \
            npm $@
@@ -586,6 +641,7 @@ docker run --rm \
            -v /private/var/folders:/var/folders \
            -e "NODE_PATH=/app/node_modules" \
            -p 8080:8080 \
+           -p 3000:3000 \
            malsinet/node:6.11 \
            node $@
 #+END_SRC
