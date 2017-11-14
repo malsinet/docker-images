@@ -550,6 +550,22 @@ docker run --rm \
 #+END_SRC
 
 ** node
+*** yarn-node-9.1
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-9.1
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:9.1 \
+           yarn $@
+#+END_SRC
+
 *** npm-node-9.1
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-9.1
@@ -582,6 +598,22 @@ docker run --rm \
            node $@
 #+END_SRC
 
+*** yarn-node-8.9
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-8.9
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:8.9 \
+           yarn $@
+#+END_SRC
+
 *** npm-node-8.9
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.9
@@ -612,6 +644,22 @@ docker run --rm \
            -p 8080:8080 \
            malsinet/node:8.9 \
            node $@
+#+END_SRC
+
+*** yarn-node-6.11
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-6.11
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:6.11 \
+           yarn $@
 #+END_SRC
 
 *** npm-node-6.11
