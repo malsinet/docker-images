@@ -28,7 +28,7 @@ mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
 mkdir -p ./build/java/version-8-jre ./build/java/version-8-jdk
 mkdir -p ./build/jupyter
 mkdir -p ./build/eve
-mkdir -p ./build/mit-scheme
+mkdir -p ./build/scheme
 mkdir -p ./build/db/postgres
 mkdir -p ./build/db/pgadmin4
 mkdir -p ./build/db/mysql
@@ -279,10 +279,38 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
-*** mit-scheme
+*** scheme
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/mit-scheme/Dockerfile
-FROM debian:8.3
+Instalé tres "sabores" de Scheme en una misma imagen, para usar indistintamente cada uno desde la misma imagen.
+
+- MIT Scheme: https://www.gnu.org/software/mit-scheme/
+- Guile: https://www.gnu.org/software/guile/
+- Racket: https://racket-lang.org
+
+**** Nota: Chicken Scheme
+
+Intenté usar Chicken Scheme (https://www.call-cc.org), pero me resultó bastante compleja y engorrosa su instalación. Si bien el paquete básico se instala fácilmente, Emacs utiliza un REPL para scheme, Geiser, que requiere descargar, compilar e instalar muchos módulos adicionales.
+
+=M-x describe-variable geiser-chicken--required-modules=
+
+- chicken-doc
+- apropos
+- data-structures
+- extras
+- ports
+- posix
+- srfi-1
+- srfi-13
+- srfi-14
+- srfi-18
+- srfi-69
+- tcp
+- utils
+
+**** Dockerfile
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/scheme/Dockerfile
+FROM debian:stable
 
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -290,8 +318,8 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update
 RUN apt-get install -y mit-scheme
-
-ENTRYPOINT ["mit-scheme"]
+RUN apt-get install -y guile-2.0-dev guile-2.0 libgcrypt20-dev libbz2-dev libsqlite3-dev autopoint
+RUN apt-get install -y racket libedit-dev
 #+END_SRC
 
 ** Bases de datos
@@ -392,11 +420,12 @@ docker run --rm \
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-5.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/php:5.6-apache php $@
+           malsinet/php:5.6-apache \
+           php "$@"
 #+END_SRC
 
 *** php-7
@@ -404,11 +433,12 @@ docker run --rm \
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/php:7-apache php $@
+           malsinet/php:7-apache \
+           php "$@"
 #+END_SRC
 
 ** python
@@ -420,12 +450,12 @@ Para python agrego la variable de entorno =PYTHONPATH= que me permite ejecutar c
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:2.7 python $@
+           malsinet/python:2.7 python "$@"
 #+END_SRC
 
 *** pip-2.7
@@ -459,12 +489,12 @@ docker run --rm -it \
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:3.6 python $@
+           malsinet/python:3.6 python "$@"
 #+END_SRC
 
 *** pip-3.6
@@ -595,7 +625,7 @@ docker run --rm \
            -p 3000:3000 \
            -p 8080:8080 \
            malsinet/node:9.1 \
-           node $@
+           node "$@"
 #+END_SRC
 
 *** yarn-node-8.9
@@ -643,7 +673,7 @@ docker run --rm \
            -p 3000:3000 \
            -p 8080:8080 \
            malsinet/node:8.9 \
-           node $@
+           node "$@"
 #+END_SRC
 
 *** yarn-node-6.11
@@ -691,19 +721,103 @@ docker run --rm \
            -p 8080:8080 \
            -p 3000:3000 \
            malsinet/node:6.11 \
-           node $@
+           node "$@"
 #+END_SRC
 
-** mit-scheme
+** scheme
+*** Problemas encontrados (y solucionados)
+
+Mi objetivo era usar intérpretes de Scheme desde Emacs con Org-mode para Literate Programming. Por lo tanto, necesitaba poder lanzar el intérprete de scheme desde dentro de Emacs y que Emacs pudiera enviarle comandos en una sesión REPL.
+
+Me costó bastante lograrlo, pero finalmente pude hacer que Emacs use los runtimes de scheme dockerizados. Emacs utiliza [[http://geiser.nongnu.org][Geiser]] como REPL, pero cuando hacía =M-x run-geiser= fallaban todos los intérpretes con errores del tipo =mit-scheme exited with error(1)=.
+
+Solucioné los siguientes problemas:
+
+**** Cambio de $@ por "$@"
+
+Primero me di cuenta de que si ejecutaba un bloque de código desde la consola, los comandos dockerizados no retornaban el valor correcto. Por ejemplo, al ejecutar =racket -e "(+ 1 2 3)"= , mi comando dockerizado no devolvía nada, y pasaba lo mismo con el resto de los intérpretes (mit, guile, chicken). Sin embargo, al hacer lo mismo con un scheme instalado nativamente en mi máquina, sí funcionaba correctamente.
+
+Luego de hacer algunas pruebas me di cuenta de que el problema era el script en bash que lanza el comando, que no estaba pasando el bloque de código como un string, sino que lo enviaba como una lista de parámetros (=racket -e + 1 2 3=). Eso causaba que el comando fallase porque los argumentos no tenían sentido. Eventualmente encontré [[https://stackoverflow.com/questions/17094086/passing-arguments-with-spaces-between-bash-script][esta pregunta de StackOverflow]] y corregí el error en el script, que consistía en pasarle los parámetros así ="$@"= en vez de así =$@=.
+
+Corregido este problema, ya pude ejecutar desde consola un bloque de código y que el comando dockerizado me devuelva el resultado correcto.
+
+#+BEGIN_SRC sh :results output drawer
+racket -e "(+ 1 2 3)"
+#+END_SRC
+
+**** Cambio de -ti por -i
+
+Ahora ya podía ejecutar el código como un string desde consola, pero aparentemente Geiser no ejecuta el código scheme enviándolo como string sino que lo envía por STDIN, algo como =cat /tmp/scheme-file-123.scm | guile=. Nuevamente, me llevó un rato darme cuenta de qué era lo que tenía que corregir, pero finalmente se me prendió la lamparita y cambié el =docker run --rm -ti= que lanza el intérprete por =docker run --rm -i ...=. 
+
+La opción =-t= hace que docker lance comando en una pseudo TTY, lo cual interfiere con la ejecución del código scheme desde Geiser.
+
+La opción =-i= le transfiere el STDIN del host al STDIN del comando ejecutado dentro del contenedor. Ésta es la opción que necesitaba para el comando.
+
+Una ventaja adicional fue que este cambio me ayudó también a corregir el funcionamiento de los comandos dockerizados para python (y node y php) que tenían el mismo problema.
+
+**** Montar /Users/martin como volumen
+
+Geiser carga algunos archivos desde la carpeta =~/.emacs.d/elpa/geiser-xxx/scheme/= para inicializar el REPL. Obviamente esta carpeta no se encuentra disponible adentro del contenedor, y por lo tanto, cuando lanzaba =M-x run-geiser= me daba un error porque no encontraba los archivos .scm.
+
+Para corregir ese error hice que el comando monte la carpeta =/Users= como un volumen dentro del contenedor.
+
+#+BEGIN_SRC sh :results output drawer
+ls -al ~/.emacs.d/elpa/geiser-*/scheme
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+total 0
+drwxr-xr-x   8 martin  staff   272 Oct 27 11:43 .
+drwxr-xr-x  71 martin  staff  2414 Oct 27 11:43 ..
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chez
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chibi
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chicken
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 guile
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 mit
+drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 racket
+:END:
+
+*** MIT Scheme
 
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/mit-scheme
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -ti \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/mit-scheme
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/scheme \
+       mit-scheme "$@"
+#+END_SRC
+
+*** Guile Scheme
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/guile
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/scheme \
+       guile "$@"
+#+END_SRC
+
+*** Racket
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/racket
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/scheme \
+       racket "$@"
 #+END_SRC
 
 ** pdflatex
