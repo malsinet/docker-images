@@ -281,7 +281,7 @@ CMD ["java"]
 
 *** scheme
 
-Instalé tres "sabores" de Scheme en una misma imagen, para usar indistintamente cada uno desde la misma imagen.
+Instalé tres "sabores" de Scheme en una misma imagen:
 
 - MIT Scheme: https://www.gnu.org/software/mit-scheme/
 - Guile: https://www.gnu.org/software/guile/
@@ -289,7 +289,7 @@ Instalé tres "sabores" de Scheme en una misma imagen, para usar indistintamente
 
 **** Nota: Chicken Scheme
 
-Intenté usar Chicken Scheme (https://www.call-cc.org), pero me resultó bastante compleja y engorrosa su instalación. Si bien el paquete básico se instala fácilmente, Emacs utiliza un REPL para scheme, Geiser, que requiere descargar, compilar e instalar muchos módulos adicionales.
+Intenté usar Chicken Scheme (https://www.call-cc.org), pero la instalación me resultó bastante compleja y engorrosa. Si bien el paquete básico se instala fácilmente, Emacs utiliza un REPL para scheme (Geiser) que requiere descargar, compilar e instalar muchos módulos adicionales.
 
 =M-x describe-variable geiser-chicken--required-modules=
 
@@ -397,11 +397,11 @@ Estos comandos permiten utilizar las distintas herramientas sin "contaminar" la 
 
 Hay algunos trucos para lograr una integración completa con el entorno, a saber:
 
-- Montar la carpeta =~/.ssh=: Esto se hace para copiar dentro del contenedor la configuración local de ssh (claves públicas y hosts), que sirve por ejemplo cuando el contenedor accede a repositorios privados en github o bitbucket
+- Montar la carpeta =~/.ssh= :: Esto se hace para copiar dentro del contenedor la configuración local de ssh (claves públicas y hosts), que sirve por ejemplo cuando el contenedor accede a repositorios privados en github o bitbucket
 
-- Montar la carpeta =/private/var/folders=: En Mac OS X se utiliza la carpeta =/private/var/folders= como destino de los archivos y carpetas temporales
+- Montar la carpeta =/private/var/folders= :: En Mac OS X se utiliza la carpeta =/private/var/folders= como destino de los archivos y carpetas temporales
 
-- Montar la carpeta desde donde se lanza el comando como =/app=: Esto permite, por ejemplo, ejecutar =composer install= o =npm install= desde la carpeta de nuestro proyecto
+- Montar la carpeta desde donde se lanza el comando como =/app= :: Esto permite, por ejemplo, ejecutar =composer install= o =npm install= desde la carpeta de nuestro proyecto
 
 ** composer
 
@@ -737,7 +737,7 @@ Solucioné los siguientes problemas:
 
 Primero me di cuenta de que si ejecutaba un bloque de código desde la consola, los comandos dockerizados no retornaban el valor correcto. Por ejemplo, al ejecutar =racket -e "(+ 1 2 3)"= , mi comando dockerizado no devolvía nada, y pasaba lo mismo con el resto de los intérpretes (mit, guile, chicken). Sin embargo, al hacer lo mismo con un scheme instalado nativamente en mi máquina, sí funcionaba correctamente.
 
-Luego de hacer algunas pruebas me di cuenta de que el problema era el script en bash que lanza el comando, que no estaba pasando el bloque de código como un string, sino que lo enviaba como una lista de parámetros (=racket -e + 1 2 3=). Eso causaba que el comando fallase porque los argumentos no tenían sentido. Eventualmente encontré [[https://stackoverflow.com/questions/17094086/passing-arguments-with-spaces-between-bash-script][esta pregunta de StackOverflow]] y corregí el error en el script, que consistía en pasarle los parámetros así ="$@"= en vez de así =$@=.
+Luego de hacer algunas pruebas me di cuenta de que el problema era el script en bash que lanza el comando, que no estaba pasando el bloque de código como un string, sino que lo enviaba como una lista de parámetros (=racket -e + 1 2 3=). Eso hacía fallar el comando porque los argumentos sueltos no tienen sentido. Eventualmente encontré [[https://stackoverflow.com/questions/17094086/passing-arguments-with-spaces-between-bash-script][esta pregunta de StackOverflow]] y corregí el error en el script, que consistía en pasarle los parámetros así: ="$@"= , en vez de así: =$@=.
 
 Corregido este problema, ya pude ejecutar desde consola un bloque de código y que el comando dockerizado me devuelva el resultado correcto.
 
@@ -747,13 +747,13 @@ racket -e "(+ 1 2 3)"
 
 **** Cambio de -ti por -i
 
-Ahora ya podía ejecutar el código como un string desde consola, pero aparentemente Geiser no ejecuta el código scheme enviándolo como string sino que lo envía por STDIN, algo como =cat /tmp/scheme-file-123.scm | guile=. Nuevamente, me llevó un rato darme cuenta de qué era lo que tenía que corregir, pero finalmente se me prendió la lamparita y cambié el =docker run --rm -ti= que lanza el intérprete por =docker run --rm -i ...=. 
+Ahora ya podía ejecutar el código como un string desde consola, pero aparentemente Geiser no ejecuta el código scheme enviándolo como un string sino que lo envía por STDIN, algo así como =cat /tmp/scheme-file-123.scm | guile=. Nuevamente, me llevó un rato darme cuenta de qué era lo que tenía que corregir, pero finalmente se me prendió la lamparita y cambié el =docker run --rm -ti= que lanza el intérprete por =docker run --rm -i ...=. 
 
 La opción =-t= hace que docker lance comando en una pseudo TTY, lo cual interfiere con la ejecución del código scheme desde Geiser.
 
 La opción =-i= le transfiere el STDIN del host al STDIN del comando ejecutado dentro del contenedor. Ésta es la opción que necesitaba para el comando.
 
-Una ventaja adicional fue que este cambio me ayudó también a corregir el funcionamiento de los comandos dockerizados para python (y node y php) que tenían el mismo problema.
+Una ventaja adicional fue que este cambio me ayudó también a corregir el funcionamiento de los comandos dockerizados para python, node y php, que tenían el mismo problema.
 
 **** Montar /Users/martin como volumen
 
