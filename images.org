@@ -21,7 +21,7 @@ Lo primero que debemos hacer es generar la estructura de carpetas en donde se co
 #+BEGIN_SRC sh
 rm -Rf ./build
 mkdir -p ./build/bin
-mkdir -p ./build/php/version-5.6 ./build/php/version-7 ./build/php/composer
+mkdir -p ./build/php/version-5.6 ./build/php/version-7.1 ./build/php/version-7.2 ./build/php/composer
 mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
 mkdir -p ./build/node/version-6.11 ./build/node/version-8.9 ./build/node/version-9.1
 mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
@@ -97,10 +97,10 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-**** version-7
+**** version-7.1
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7/Dockerfile
-FROM php:7-apache
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7.1/Dockerfile
+FROM php:7.1-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN apt-get update
@@ -109,6 +109,26 @@ RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 RUN pecl install xdebug
 RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20160303/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/var/www/vendor/bin
+
+WORKDIR /var/www/html
+
+EXPOSE 80
+CMD ["apache2-foreground"]
+#+END_SRC
+
+**** version-7.2
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7.2/Dockerfile
+FROM php:7.2-apache
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN apt-get update
+RUN apt-get install -y libpq-dev
+RUN a2enmod rewrite
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/var/www/vendor/bin
@@ -135,7 +155,7 @@ CMD ["composer"]
 Las imágenes de python se crean a partir de las imágenes oficiales, con los siguientes agregados:
 
 - pip :: upgrade a versión 9 (por defecto viene con la 8.1.2)
-- pew :: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
+- pipenv :: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
 - bpython :: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
 - bash :: se crea un alias para ll y se configura la variable de entorno =$SHELL=
 
@@ -146,7 +166,7 @@ FROM python:2.7
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
-RUN pip install pew bpython
+RUN pip install pipenv bpython
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 
@@ -162,7 +182,7 @@ FROM python:3.6
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
-RUN pip install pew bpython
+RUN pip install pipenv bpython
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 
@@ -330,6 +350,8 @@ RUN apt-get install -y racket libedit-dev
 ** Utilidades
 *** texlive
 
+Esta imagen es enorme, pesa más de 4GB, y por lo tanto crearla tarda un buen rato. Tengo que buscar una distribución más liviana. Una opción a evaluar es [[https://yihui.name/tinytex/][TinyTeX]], para verificar si es posible usarla con org-mode, lo que reduciría enormemente el espacio en disco necesario.
+
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
 MAINTAINER Martin Alsinet <martin@alsinet>
@@ -405,12 +427,15 @@ Hay algunos trucos para lograr una integración completa con el entorno, a saber
 
 ** composer
 
+Para ejecutar composer se agrega la opción =-t= que permite cancelar el comando con =Ctrl-C=. Además se monta la carpeta =~/.composer= donde se guarda el cache de paquetes de la aplicación. Si no se monta esta carpeta, cada vez que se ejecuta el comando se deben descargar más de 10MB solamente del listado de paquetes disponibles.
+
 #+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -t \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
+           -v ~/.composer:/composer \
            malsinet/composer $@
 #+END_SRC
 
@@ -727,9 +752,9 @@ docker run --rm \
 ** scheme
 *** Problemas encontrados (y solucionados)
 
-Mi objetivo era usar intérpretes de Scheme desde Emacs con Org-mode para Literate Programming. Por lo tanto, necesitaba poder lanzar el intérprete de scheme desde dentro de Emacs y que Emacs pudiera enviarle comandos en una sesión REPL.
+Mi objetivo era usar intérpretes de Scheme desde Emacs con Org-mode para Literate Programming. Por lo tanto, necesitaba poder lanzar el intérprete desde dentro de Emacs y que Emacs pudiera enviarle comandos en una sesión REPL.
 
-Me costó bastante lograrlo, pero finalmente pude hacer que Emacs use los runtimes de scheme dockerizados. Emacs utiliza [[http://geiser.nongnu.org][Geiser]] como REPL, pero cuando hacía =M-x run-geiser= fallaban todos los intérpretes con errores del tipo =mit-scheme exited with error(1)=.
+Me costó bastante lograrlo, pero finalmente pude hacer que Emacs use los runtimes dockerizados. Emacs utiliza [[http://geiser.nongnu.org][Geiser]] como REPL, pero cuando hacía =M-x run-geiser= todos los intérpretes fallaban con errores del tipo =mit-scheme exited with error(1)=.
 
 Solucioné los siguientes problemas:
 
