@@ -107,8 +107,6 @@ RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-RUN pecl install xdebug
-RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20160303/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/var/www/vendor/bin
@@ -142,7 +140,7 @@ CMD ["apache2-foreground"]
 **** composer
 
 #+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/composer/Dockerfile
-FROM composer/composer:alpine
+FROM composer:1.6
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 WORKDIR /app
