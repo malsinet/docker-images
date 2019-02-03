@@ -4,6 +4,7 @@
 #+DATE: 2017
 #+OPTIONS: toc:nil ':t num:nil
 #+LANGUAGE: es
+#+PROPERTY: header-args:sh :results output drawer
 
 * Motivación
 
@@ -16,27 +17,20 @@ Una ventaja de tener herramientas dockerizadas (p.ej. como composer o npm) es qu
 * Procedimiento
 ** Paso 1: Generar carpeta build
 
-Lo primero que debemos hacer es generar la estructura de carpetas en donde se colocarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
+Lo primero que debemos hacer es generar la carpeta =build=, que es donde se depositarán los distintos dockerfiles. Para hacerlo hay que ejecutar el siguiente bloque de código con =C-c C-c=.
 
 #+BEGIN_SRC sh
 rm -Rf ./build
-mkdir -p ./build/bin
-mkdir -p ./build/php/version-5.6 ./build/php/version-7.1 ./build/php/version-7.2 ./build/php/composer
-mkdir -p ./build/python/version-2.7 ./build/python/version-3.6
-mkdir -p ./build/node/version-6.11 ./build/node/version-8.9 ./build/node/version-9.1
-mkdir -p ./build/java/version-7-jre ./build/java/version-7-jdk
-mkdir -p ./build/java/version-8-jre ./build/java/version-8-jdk
-mkdir -p ./build/jupyter
-mkdir -p ./build/eve
-mkdir -p ./build/scheme
-mkdir -p ./build/db/postgres
-mkdir -p ./build/db/pgadmin4
-mkdir -p ./build/db/mysql
-mkdir -p ./build/db/phpmyadmin
-mkdir -p ./build/texlive
+mkdir  ./build
+ls -lah ./build
 #+END_SRC
 
 #+RESULTS:
+:results:
+total 0
+drwxr-xr-x  2 martin  staff    64B Feb  2 22:20 .
+drwxr-xr-x  7 martin  staff   224B Feb  2 22:20 ..
+:end:
 
 ** Paso 2: Generar dockerfiles y comandos
 
@@ -241,9 +235,9 @@ CMD ["npm", "start"]
 #+END_SRC
 
 *** java
-**** version-7-jre
+**** 7-jre
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-7-jre/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/7-jre/Dockerfile :mkdirp yes
 FROM openjdk:7-jre
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -255,9 +249,9 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
-**** version-7-jdk
+**** 7-jdk
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-7-jdk/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/7-jdk/Dockerfile :mkdirp yes
 FROM openjdk:7-jdk
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -269,9 +263,9 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
-**** version-8-jre
+**** 8-jre
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-8-jre/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/8-jre/Dockerfile :mkdirp yes
 FROM openjdk:8-jre
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -283,9 +277,9 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
-**** version-8-jdk
+**** 8-jdk
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/version-8-jdk/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/8-jdk/Dockerfile :mkdirp yes
 FROM openjdk:8-jdk
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -327,7 +321,7 @@ Intenté usar Chicken Scheme (https://www.call-cc.org), pero la instalación me 
 
 **** Dockerfile
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/scheme/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/scheme/Dockerfile :mkdirp yes
 FROM debian:stable
 
 MAINTAINER Martin Alsinet <martin@alsinet>
@@ -340,17 +334,12 @@ RUN apt-get install -y guile-2.0-dev guile-2.0 libgcrypt20-dev libbz2-dev libsql
 RUN apt-get install -y racket libedit-dev
 #+END_SRC
 
-** Bases de datos
-*** postgres
-*** pgadmin4
-*** mysql
-*** phpmyadmin
 ** Utilidades
 *** texlive
 
 Esta imagen es enorme, pesa más de 4GB, y por lo tanto crearla tarda un buen rato. Tengo que buscar una distribución más liviana. Una opción a evaluar es [[https://yihui.name/tinytex/][TinyTeX]], para verificar si es posible usarla con org-mode, lo que reduciría enormemente el espacio en disco necesario.
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile :mkdirp yes
 FROM ubuntu:xenial
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -894,14 +883,4 @@ export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -ti \
            -p 8080:8080 \
            malsinet/eve
-#+END_SRC
-** lein
-
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/lein
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
-           -v $(pwd):/app \
-           -p 8080:8080 \
-           clojure lein $@
 #+END_SRC
