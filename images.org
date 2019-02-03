@@ -67,11 +67,10 @@ Las imágenes de PHP se generan a partir de las imágenes oficiales, a las que l
   + =pdo=
   + =pdo_mysql=
   + =pdo_pgsql=
-  + =xdebug=
 
-**** version-5.6
+**** 5.6
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-5.6/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5.6/Dockerfile :mkdirp yes
 FROM php:5.6-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -79,8 +78,6 @@ RUN apt-get update
 RUN apt-get install -y libpq-dev
 RUN a2enmod rewrite
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-RUN pecl install xdebug
-RUN echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" >> /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/var/www/vendor/bin
@@ -91,9 +88,9 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-**** version-7.1
+**** 7.1
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7.1/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.1/Dockerfile :mkdirp yes
 FROM php:7.1-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -111,10 +108,30 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-**** version-7.2
+**** 7.2
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/version-7.2/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.2/Dockerfile :mkdirp yes
 FROM php:7.2-apache
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN apt-get update
+RUN apt-get install -y libpq-dev
+RUN a2enmod rewrite
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+ENV SHELL=/bin/bash
+ENV PATH=$PATH:/var/www/vendor/bin
+
+WORKDIR /var/www/html
+
+EXPOSE 80
+CMD ["apache2-foreground"]
+#+END_SRC
+
+**** 7.3
+
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.3/Dockerfile :mkdirp yes
+FROM php:7.3-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN apt-get update
@@ -133,8 +150,8 @@ CMD ["apache2-foreground"]
 
 **** composer
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/composer/Dockerfile
-FROM composer:1.6
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/composer/Dockerfile :mkdirp yes
+FROM composer:1.8
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 WORKDIR /app
@@ -416,20 +433,20 @@ Hay algunos trucos para lograr una integración completa con el entorno, a saber
 
 Para ejecutar composer se agrega la opción =-t= que permite cancelar el comando con =Ctrl-C=. Además se monta la carpeta =~/.composer= donde se guarda el cache de paquetes de la aplicación. Si no se monta esta carpeta, cada vez que se ejecuta el comando se deben descargar más de 10MB solamente del listado de paquetes disponibles.
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -t \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
-           -v ~/.composer:/composer \
+           -v ~/.composer:/tmp/cache \
            malsinet/composer $@
 #+END_SRC
 
 ** php
-*** php-5.6
+*** 5.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-5.6
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-5.6 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -440,16 +457,42 @@ docker run --rm -i \
            php "$@"
 #+END_SRC
 
-*** php-7
+*** 7.1
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.1 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/php:7-apache \
+           malsinet/php:7.1-apache \
+           php "$@"
+#+END_SRC
+
+*** 7.2
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.2 :mkdirp yes
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/php:7.2-apache \
+           php "$@"
+#+END_SRC
+
+*** 7.3
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.3 :mkdirp yes
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/php:7.3-apache \
            php "$@"
 #+END_SRC
 
