@@ -163,19 +163,18 @@ CMD ["composer"]
 
 Las imágenes de python se crean a partir de las imágenes oficiales, con los siguientes agregados:
 
-- pip :: upgrade a versión 9 (por defecto viene con la 8.1.2)
-- pipenv :: el paquete pew es un reemplazo de virtualenvwrapper y se utiliza para generar un entorno virtual en el cual poder ejecutar nuestra aplicación de manera aislada de la instalación de python del sistema. 
-- bpython :: el paquete bpython es una consola para inspeccionar y ejecutar código de manera interactiva con autocomplete y syntax highlighting.
+- pip :: actualización a la última versión disponible
+- virtualenv :: entornos de python aislados del python del sistema
 - bash :: se crea un alias para ll y se configura la variable de entorno =$SHELL=
 
-**** version-2.7
+**** 2.7
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/version-2.7/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/2.7/Dockerfile :mkdirp yes
 FROM python:2.7
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
-RUN pip install pipenv bpython
+RUN pip install virtualenv
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 
@@ -184,14 +183,14 @@ WORKDIR /app
 CMD ["/bin/bash"]
 #+END_SRC
 
-**** version-3.6
+**** 3.6
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/version-3.6/Dockerfile
+#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/3.6/Dockerfile :mkdirp yes
 FROM python:3.6
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
-RUN pip install pipenv bpython
+RUN pip install virtualenv
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
 ENV SHELL=/bin/bash
 
@@ -498,88 +497,170 @@ docker run --rm -i \
 
 ** python
 
-Para python agrego la variable de entorno =PYTHONPATH= que me permite ejecutar cualquier proyecto cargando las dependencias desde la carpeta =./vendor=. De esta manera, uno puede instalar una vez las dependencias con =pip install -t vendor -r requirements.txt= y quedan en la carpeta =./vendor=. Dado que al ejecutar python el comando va a montar la carpeta local como =/app=, si respeto la convención de guardar siempre las dependencias en =./vendor=, siempre serán montadas como =/app/vendor= dentro del contenedor. Por lo tanto, configurando la variable de entorno =PYTHONPATH= con el valor =/app/vendor= me aseguro que python siempre pueda encontrar los módulos que se requieren para ejecutar la aplicación.
+Anteriormente usaba la variable de entorno =PYTHONPATH= para agregar una carpeta =/app/vendor= al path de python, en donde descargaba las dependencias usando =pip install -t /app/vendor= y podía ejecutar una aplicación cargando las dependencias desde los archivos locales ya descargados.
 
-*** python-2.7
+En versiones más recientes de python se modificó el comportamiento de la resolución de librerías, y ya no funciona esa manera de hacer las cosas. Tuve que modificar mis comandos para que detecten si existe un virtualenv creado en la carpeta desde donde se está lanzando el comando (por convención se busca siempre la carpeta =./venv=). Si hay un virtualenv, usamos el python o el pip que están dentro del virtualenv (que siempre van a estar en =/app/venv/bin=), caso contrario usamos los comandos por defecto.
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7
+*** 2.7
+**** python-3.6
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7 :mkdirp yes
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+ENV_PYTHON=./venv/bin/python
+if [ -x "$file" ]; then
+    PYTHON="/app/venv/bin/python"
+else 
+    PYTHON="python"
+fi 
+
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:2.7 $PYTHON "$@"
+#+END_SRC
+
+**** pip-2.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-2.7 :mkdirp yes
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+ENV_PIP=./venv/bin/pip
+if [ -x "$ENV_PIP" ]; then
+    PIP="/app/venv/bin/pip"
+else 
+    PIP="pip"
+fi 
+
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:2.7 $PIP $@
+#+END_SRC
+**** virtualenv-2.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-2.7 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:2.7 python "$@"
+           malsinet/python:2.7 virtualenv $@
 #+END_SRC
 
-*** pip-2.7
+*** 3.6
+**** python-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-2.7
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+
+ENV_PYTHON=./venv/bin/python
+if [ -x "$file" ]; then
+    PYTHON="/app/venv/bin/python"
+else 
+    PYTHON="python3"
+fi 
+
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:2.7 pip $@
+           malsinet/python:3.6 $PYTHON "$@"
 #+END_SRC
 
-*** bpython-2.7
+**** pip-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/bpython-2.7
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.6 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -it \
+
+ENV_PIP=./venv/bin/pip
+if [ -x "$ENV_PIP" ]; then
+    PIP="/app/venv/bin/pip"
+else 
+    PIP="pip"
+fi 
+
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:2.7 bpython $@
+           malsinet/python:3.6 $PIP $@
 #+END_SRC
+**** virtualenv-3.6
 
-*** python-3.6
-
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-3.6 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:3.6 python "$@"
+           malsinet/python:3.6 virtualenv $@
 #+END_SRC
 
-*** pip-3.6
+*** 3.7
+**** python-3.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.6
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.7 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+
+ENV_PYTHON=./venv/bin/python
+if [ -x "$file" ]; then
+    PYTHON="/app/venv/bin/python"
+else 
+    PYTHON="python3"
+fi 
+
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:3.6 pip $@
+           malsinet/python:3.7 $PYTHON "$@"
 #+END_SRC
-*** bpython-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/bpython-3.6
+**** pip-3.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.7 :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -ti \
+
+ENV_PIP=./venv/bin/pip
+if [ -x "$ENV_PIP" ]; then
+    PIP="/app/venv/bin/pip"
+else 
+    PIP="pip"
+fi 
+
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           -e "PYTHONPATH=/app/vendor" \
-           malsinet/python:3.6 bpython $@
+           malsinet/python:3.7 $PIP $@
+#+END_SRC
+
+**** virtualenv-3.7
+
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-3.7 :mkdirp yes
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:3.7 virtualenv $@
 #+END_SRC
 
 *** pygmentize
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pygmentize
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pygmentize :mkdirp yes
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -ti \
@@ -635,57 +716,10 @@ docker run --rm \
 #+END_SRC
 
 ** node
-*** yarn-node-9.1
+*** 10
+**** yarn
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-9.1
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:9.1 \
-           yarn $@
-#+END_SRC
-
-*** npm-node-9.1
-
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-9.1
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:9.1 \
-           npm $@
-#+END_SRC
-
-*** node-9.1
-
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-9.1
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:9.1 \
-           node "$@"
-#+END_SRC
-
-*** yarn-node-8.9
-
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-8.9
+#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
