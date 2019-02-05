@@ -1,10 +1,10 @@
-
 #+TITLE: Docker Images
 #+AUTHOR: Martín Alsinet
 #+DATE: 2017
 #+OPTIONS: toc:nil ':t num:nil
 #+LANGUAGE: es
-#+PROPERTY: header-args:sh :results output drawer
+#+PROPERTY: header-args:sh :exports code :padline no :results output drawer :mkdirp yes
+#+PROPERTY: header-args:dockerfile :exports code :padline no :mkdirp yes
 
 * Motivación
 
@@ -25,13 +25,6 @@ mkdir  ./build
 ls -lah ./build
 #+END_SRC
 
-#+RESULTS:
-:results:
-total 0
-drwxr-xr-x  2 martin  staff    64B Feb  2 22:20 .
-drwxr-xr-x  7 martin  staff   224B Feb  2 22:20 ..
-:end:
-
 ** Paso 2: Generar dockerfiles y comandos
 
 Para generar todos los dockerfiles se debe ejecutar el comando =(M-x org-babel-tangle)=. Este comando busca todos los bloques de código del documento y extrae el código fuente de cada bloque en su archivo Dockerfile correspondiente dentro de la carpeta =./build=. 
@@ -50,9 +43,8 @@ Finalmente copiamos los comandos a la carpeta =~/bin= de modo que queden disponi
 chmod +x ./build/bin/*
 mkdir -p ~/bin
 cp ./build/bin/* ~/bin
+ls -alh ~/bin
 #+END_SRC
-
-#+RESULTS:
 
 * Imágenes
 ** Lenguajes de programación
@@ -70,7 +62,7 @@ Las imágenes de PHP se generan a partir de las imágenes oficiales, a las que l
 
 **** 5.6
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/5.6/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/php/5.6/Dockerfile
 FROM php:5.6-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -90,7 +82,7 @@ CMD ["apache2-foreground"]
 
 **** 7.1
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.1/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/php/7.1/Dockerfile
 FROM php:7.1-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -110,7 +102,7 @@ CMD ["apache2-foreground"]
 
 **** 7.2
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.2/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/php/7.2/Dockerfile
 FROM php:7.2-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -130,7 +122,7 @@ CMD ["apache2-foreground"]
 
 **** 7.3
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/7.3/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/php/7.3/Dockerfile
 FROM php:7.3-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -150,7 +142,7 @@ CMD ["apache2-foreground"]
 
 **** composer
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/php/composer/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/php/composer/Dockerfile
 FROM composer:1.8
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -169,7 +161,7 @@ Las imágenes de python se crean a partir de las imágenes oficiales, con los si
 
 **** 2.7
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/2.7/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/python/2.7/Dockerfile
 FROM python:2.7
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -185,8 +177,24 @@ CMD ["/bin/bash"]
 
 **** 3.6
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/python/3.6/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/python/3.6/Dockerfile
 FROM python:3.6
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+RUN pip install --upgrade pip
+RUN pip install virtualenv
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+ENV SHELL=/bin/bash
+
+WORKDIR /app
+
+CMD ["/bin/bash"]
+#+END_SRC
+
+**** 3.7
+
+#+BEGIN_SRC dockerfile :tangle build/python/3.7/Dockerfile
+FROM python:3.7
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
@@ -205,10 +213,10 @@ La única diferencia con las imágenes oficiales es que agrego la carpeta =/app/
 
 Cuando se instalan paquetes con =npm install=, a veces se desea instalar comandos de consola, que se mantienen en la carpeta =./node_modules/.bin=. Mis [[Comandos Dockerizados][comandos dockerizados]] para npm y node montan la carpeta desde donde se lanza el comando como =/app= dentro del contenedor. Por lo tanto, si agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen, en los contenedores de node siempre van a estar disponibles los comandos de consola que se instalen con =npm install= sin necesidad de indicar el path absoluto del comando.
 
-**** version-9.1
+**** Versión 11
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-9.1/Dockerfile
-FROM node:9.1
+#+BEGIN_SRC dockerfile :tangle build/node/11/Dockerfile
+FROM node:11-stretch
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -220,25 +228,10 @@ WORKDIR /app
 CMD ["npm", "start"]
 #+END_SRC
 
-**** version-8.9
+**** Versión 10
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-8.9/Dockerfile
-FROM node:8.9
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-ENV SHELL=/bin/bash
-ENV PATH=$PATH:/app/node_modules/.bin
-RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-
-WORKDIR /app
-
-CMD ["npm", "start"]
-#+END_SRC
-
-**** version-6.11
-
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/node/version-6.11/Dockerfile
-FROM node:6.11
+#+BEGIN_SRC dockerfile :tangle build/node/10/Dockerfile
+FROM node:10-jessie
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -253,7 +246,7 @@ CMD ["npm", "start"]
 *** java
 **** 7-jre
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/7-jre/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/java/7-jre/Dockerfile
 FROM openjdk:7-jre
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -267,7 +260,7 @@ CMD ["java"]
 
 **** 7-jdk
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/7-jdk/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/java/7-jdk/Dockerfile
 FROM openjdk:7-jdk
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -281,7 +274,7 @@ CMD ["java"]
 
 **** 8-jre
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/8-jre/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/java/8-jre/Dockerfile
 FROM openjdk:8-jre
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -295,7 +288,7 @@ CMD ["java"]
 
 **** 8-jdk
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/java/8-jdk/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/java/8-jdk/Dockerfile
 FROM openjdk:8-jdk
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -337,7 +330,7 @@ Intenté usar Chicken Scheme (https://www.call-cc.org), pero la instalación me 
 
 **** Dockerfile
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/scheme/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/scheme/Dockerfile
 FROM debian:stable
 
 MAINTAINER Martin Alsinet <martin@alsinet>
@@ -355,7 +348,7 @@ RUN apt-get install -y racket libedit-dev
 
 Esta imagen es enorme, pesa más de 4GB, y por lo tanto crearla tarda un buen rato. Tengo que buscar una distribución más liviana. Una opción a evaluar es [[https://yihui.name/tinytex/][TinyTeX]], para verificar si es posible usarla con org-mode, lo que reduciría enormemente el espacio en disco necesario.
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/texlive/Dockerfile :mkdirp yes
+#+BEGIN_SRC dockerfile :tangle build/texlive/Dockerfile
 FROM ubuntu:xenial
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -375,7 +368,7 @@ El soporte original de lenguajes de programación para Jupyter es Python, pero s
 
 Basándonos en la imagen de python3.6 que ya tenemos construida instalamos además [[https://tuananh.org/2015/06/16/how-to-install-zeromq-on-ubuntu/][ZeroMQ]], [[https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions][nodejs]] y [[https://github.com/notablemind/jupyter-nodejs][Jupyter-nodejs]], que nos permite ejecutar código javascript dentro de Jupyter.
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/jupyter/Dockerfile
+#+BEGIN_SRC dockerfile :tangle build/jupyter/Dockerfile
 FROM malsinet/python:3.6
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -399,9 +392,17 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
 #+END_SRC
 
+**** TODO revisar nuevas imágenes de docker para jupyter
+
+- https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html
+
+- https://github.com/jupyter/docker-stacks
+
+Sería bueno tener una imagen mínima con distintos lenguajes de programación (Literate Programming) y otra con las bibliotecas para data science.
+
 *** Eve
 
-#+BEGIN_SRC dockerfile :exports code :padline no :tangle build/eve/Dockerfile
+#+BEGIN_SRC dockerfile :tangle build/eve/Dockerfile
 FROM malsinet/node:8.9
 MAINTAINER Martin Alsinet <martin@alsinet>
 
@@ -432,7 +433,7 @@ Hay algunos trucos para lograr una integración completa con el entorno, a saber
 
 Para ejecutar composer se agrega la opción =-t= que permite cancelar el comando con =Ctrl-C=. Además se monta la carpeta =~/.composer= donde se guarda el cache de paquetes de la aplicación. Si no se monta esta carpeta, cada vez que se ejecuta el comando se deben descargar más de 10MB solamente del listado de paquetes disponibles.
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/composer :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/composer
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -t \
@@ -445,7 +446,7 @@ docker run --rm -t \
 ** php
 *** 5.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-5.6 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/php-5.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -458,7 +459,7 @@ docker run --rm -i \
 
 *** 7.1
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.1 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/php-7.1
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -471,7 +472,7 @@ docker run --rm -i \
 
 *** 7.2
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.2 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/php-7.2
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -484,7 +485,7 @@ docker run --rm -i \
 
 *** 7.3
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/php-7.3 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/php-7.3
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -501,10 +502,12 @@ Anteriormente usaba la variable de entorno =PYTHONPATH= para agregar una carpeta
 
 En versiones más recientes de python se modificó el comportamiento de la resolución de librerías, y ya no funciona esa manera de hacer las cosas. Tuve que modificar mis comandos para que detecten si existe un virtualenv creado en la carpeta desde donde se está lanzando el comando (por convención se busca siempre la carpeta =./venv=). Si hay un virtualenv, usamos el python o el pip que están dentro del virtualenv (que siempre van a estar en =/app/venv/bin=), caso contrario usamos los comandos por defecto.
 
+De todos modos, creo que esta es la mejor manera de ejecutar una aplicación, usando las herramientas recomendadas por la comunidad de python. Lo que hacía antes era un hack que, si bien funcionaba, era algo bastante rebuscado.
+
 *** 2.7
 **** python-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-2.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/python-2.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -524,7 +527,7 @@ docker run --rm -i \
 
 **** pip-2.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-2.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/pip-2.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -543,7 +546,7 @@ docker run --rm -i \
 #+END_SRC
 **** virtualenv-2.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-2.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/virtualenv-2.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -556,7 +559,7 @@ docker run --rm -i \
 *** 3.6
 **** python-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.6 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/python-3.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -576,7 +579,7 @@ docker run --rm -i \
 
 **** pip-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.6 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/pip-3.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -595,7 +598,7 @@ docker run --rm -i \
 #+END_SRC
 **** virtualenv-3.6
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-3.6 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/virtualenv-3.6
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -608,7 +611,7 @@ docker run --rm -i \
 *** 3.7
 **** python-3.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/python-3.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/python-3.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -628,7 +631,7 @@ docker run --rm -i \
 
 **** pip-3.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pip-3.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/pip-3.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -648,7 +651,7 @@ docker run --rm -i \
 
 **** virtualenv-3.7
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/virtualenv-3.7 :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/virtualenv-3.7
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -660,7 +663,29 @@ docker run --rm -i \
 
 *** pygmentize
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pygmentize :mkdirp yes
+#+BEGIN_SRC sh :tangle build/bin/pytest
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+ENV_PYTEST=./venv/bin/pytest
+if [ ! -x "$ENV_PYTEST" ]; then
+    echo "Pytest does not seem to be installed in ./venv/ virtualenv \n"
+    echo "\n"
+    exit
+else 
+    PYTEST="/app/venv/bin/pytest"
+fi 
+
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           malsinet/python:3.6 $PYTEST $@
+#+END_SRC
+
+*** pytmentize
+
+#+BEGIN_SRC sh :tangle build/bin/pygmentize
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -ti \
@@ -673,7 +698,7 @@ docker run --rm -ti \
 ** java
 *** java-7-jre
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jre
+#+BEGIN_SRC sh :tangle build/bin/java-7-jre
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -684,7 +709,7 @@ docker run --rm \
 
 *** java-7-jdk
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-7-jdk
+#+BEGIN_SRC sh :tangle build/bin/java-7-jdk
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -695,7 +720,7 @@ docker run --rm \
 
 *** java-8-jre
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jre
+#+BEGIN_SRC sh :tangle build/bin/java-8-jre
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -706,7 +731,7 @@ docker run --rm \
 
 *** java-8-jdk
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/java-8-jdk
+#+BEGIN_SRC sh :tangle build/bin/java-8-jdk
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -719,7 +744,7 @@ docker run --rm \
 *** 10
 **** yarn
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-10
+#+BEGIN_SRC sh :tangle build/bin/yarn-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -729,13 +754,13 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:8.9 \
+           malsinet/node:10 \
            yarn $@
 #+END_SRC
 
-*** npm-node-8.9
+**** npm
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-8.9
+#+BEGIN_SRC sh :tangle build/bin/npm-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -745,13 +770,13 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:8.9 \
+           malsinet/node:10 \
            npm $@
 #+END_SRC
 
-*** node-8.9
+**** node
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-8.9
+#+BEGIN_SRC sh :tangle build/bin/node-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -761,13 +786,14 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:8.9 \
+           malsinet/node:10 \
            node "$@"
 #+END_SRC
 
-*** yarn-node-6.11
+*** 11
+**** yarn
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/yarn-node-6.11
+#+BEGIN_SRC sh :tangle build/bin/yarn-11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -777,13 +803,13 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:6.11 \
+           malsinet/node:11 \
            yarn $@
 #+END_SRC
 
-*** npm-node-6.11
+**** npm
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/npm-node-6.11
+#+BEGIN_SRC sh :tangle build/bin/npm-11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -793,13 +819,13 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:6.11 \
+           malsinet/node:11 \
            npm $@
 #+END_SRC
 
-*** node-6.11
+**** node
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/node-6.11
+#+BEGIN_SRC sh :tangle build/bin/node-11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -807,9 +833,9 @@ docker run --rm \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            -e "NODE_PATH=/app/node_modules" \
-           -p 8080:8080 \
            -p 3000:3000 \
-           malsinet/node:6.11 \
+           -p 8080:8080 \
+           malsinet/node:11 \
            node "$@"
 #+END_SRC
 
@@ -855,21 +881,21 @@ ls -al ~/.emacs.d/elpa/geiser-*/scheme
 #+END_SRC
 
 #+RESULTS:
-:RESULTS:
+:results:
 total 0
-drwxr-xr-x   8 martin  staff   272 Oct 27 11:43 .
-drwxr-xr-x  71 martin  staff  2414 Oct 27 11:43 ..
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chez
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chibi
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 chicken
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 guile
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 mit
-drwxr-xr-x   3 martin  staff   102 Oct 27 11:43 racket
-:END:
+drwxr-xr-x   8 martin  staff   256 Jan 14 16:20 .
+drwxr-xr-x  71 martin  staff  2272 Jan 14 16:20 ..
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 chez
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 chibi
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 chicken
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 guile
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 mit
+drwxr-xr-x   3 martin  staff    96 Jan 14 16:20 racket
+:end:
 
 *** MIT Scheme
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/mit-scheme
+#+BEGIN_SRC sh :tangle build/bin/mit-scheme
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -883,7 +909,7 @@ docker run --rm -i \
 
 *** Guile Scheme
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/guile
+#+BEGIN_SRC sh :tangle build/bin/guile
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -897,7 +923,7 @@ docker run --rm -i \
 
 *** Racket
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/racket
+#+BEGIN_SRC sh :tangle build/bin/racket
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -911,7 +937,7 @@ docker run --rm -i \
 
 ** pdflatex
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/pdflatex
+#+BEGIN_SRC sh :tangle build/bin/pdflatex
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -928,7 +954,7 @@ rm -Rf _minted-*
 
 ** gnuplot
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/gnuplot
+#+BEGIN_SRC sh :tangle build/bin/gnuplot
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -941,7 +967,7 @@ docker run --rm \
 
 ** jupyter
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/jupyter
+#+BEGIN_SRC sh :tangle build/bin/jupyter
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -ti \
@@ -954,7 +980,7 @@ docker run --rm -ti \
 
 ** eve
 
-#+BEGIN_SRC sh :exports code :padline no :tangle build/bin/eve
+#+BEGIN_SRC sh :tangle build/bin/eve
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -ti \
