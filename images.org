@@ -661,7 +661,7 @@ docker run --rm -i \
            malsinet/python:3.7 virtualenv $@
 #+END_SRC
 
-*** pygmentize
+*** pytest
 
 #+BEGIN_SRC sh :tangle build/bin/pytest
 #!/bin/sh
@@ -681,18 +681,6 @@ docker run --rm -i \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
            malsinet/python:3.6 $PYTEST $@
-#+END_SRC
-
-*** pytmentize
-
-#+BEGIN_SRC sh :tangle build/bin/pygmentize
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -ti \
-           -v $(pwd):$(pwd) \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/python:3.6 pygmentize $@
 #+END_SRC
 
 ** java
