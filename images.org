@@ -512,7 +512,7 @@ De todos modos, creo que esta es la mejor manera de ejecutar una aplicación, us
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 ENV_PYTHON=./venv/bin/python
-if [ -x "$file" ]; then
+if [ -x "$ENV_PYTHON" ]; then
     PYTHON="/app/venv/bin/python"
 else 
     PYTHON="python"
@@ -564,7 +564,7 @@ docker run --rm -i \
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 ENV_PYTHON=./venv/bin/python
-if [ -x "$file" ]; then
+if [ -x "$ENV_PYTHON" ]; then
     PYTHON="/app/venv/bin/python"
 else 
     PYTHON="python3"
@@ -616,7 +616,7 @@ docker run --rm -i \
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 ENV_PYTHON=./venv/bin/python
-if [ -x "$file" ]; then
+if [ -x "$ENV_PYTHON" ]; then
     PYTHON="/app/venv/bin/python"
 else 
     PYTHON="python3"
