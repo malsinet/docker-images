@@ -300,15 +300,18 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
-*** scheme
+*** lisps
 
-Instalé tres "sabores" de Scheme en una misma imagen:
+Instalé cuatro implementaciones de Scheme y tres de Lisp en la misma imagen:
 
-- MIT Scheme: https://www.gnu.org/software/mit-scheme/
-- Guile: https://www.gnu.org/software/guile/
-- Racket: https://racket-lang.org
+**** Scheme
 
-**** Nota: Chicken Scheme
+- MIT Scheme :: https://www.gnu.org/software/mit-scheme/
+- Guile :: https://www.gnu.org/software/guile/
+- Racket :: https://racket-lang.org
+- Chez :: https://cisco.github.io/ChezScheme/
+
+***** Nota: Chicken Scheme
 
 Intenté usar Chicken Scheme (https://www.call-cc.org), pero la instalación me resultó bastante compleja y engorrosa. Si bien el paquete básico se instala fácilmente, Emacs utiliza un REPL para scheme (Geiser) que requiere descargar, compilar e instalar muchos módulos adicionales.
 
@@ -328,19 +331,46 @@ Intenté usar Chicken Scheme (https://www.call-cc.org), pero la instalación me 
 - tcp
 - utils
 
+**** Lisp
+
+- PicoLisp :: https://picolisp.com/wiki/?home 
+- NewLisp :: http://www.newlisp.org/
+- SBCL :: http://sbcl.org/
+
 **** Dockerfile
 
-#+BEGIN_SRC dockerfile :tangle build/scheme/Dockerfile
-FROM debian:stable
+#+BEGIN_SRC dockerfile :tangle build/lisps/Dockerfile
+FROM debian:testing
 
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update
+RUN apt-get install -y curl git
+
+# install schemes
 RUN apt-get install -y mit-scheme
-RUN apt-get install -y guile-2.0-dev guile-2.0 libgcrypt20-dev libbz2-dev libsqlite3-dev autopoint
+RUN apt-get install -y guile-2.2-dev guile-2.2 libgcrypt20-dev libbz2-dev libsqlite3-dev autopoint
 RUN apt-get install -y racket libedit-dev
+
+# install lisps
+RUN apt-get install -y picolisp 
+RUN apt-get install -y newlisp 
+RUN apt-get install -y sbcl sbcl-doc sbcl-source
+RUN apt-get install -y slime
+
+# build chez scheme
+WORKDIR /tmp
+RUN apt-get install -y build-essential libncurses5-dev libx11-dev uuid-dev
+RUN git clone https://github.com/cisco/ChezScheme.git
+RUN cd ChezScheme && ./configure --installschemename=chez-scheme --installpetitename=petite-chez && make install
+RUN rm -Rf /tmp/ChezScheme
+
+# clean up
+RUN apt-get autoremove
+RUN apt-get autoclean
+
 #+END_SRC
 
 ** Utilidades
@@ -827,7 +857,7 @@ docker run --rm \
            node "$@"
 #+END_SRC
 
-** scheme
+** lisps
 *** Problemas encontrados (y solucionados)
 
 Mi objetivo era usar intérpretes de Scheme desde Emacs con Org-mode para Literate Programming. Por lo tanto, necesitaba poder lanzar el intérprete desde dentro de Emacs y que Emacs pudiera enviarle comandos en una sesión REPL.
@@ -891,7 +921,7 @@ docker run --rm -i \
        -v $(pwd):/app \
        -v ~/.ssh:/root/.ssh \
        -v /private/var/folders:/var/folders \
-       malsinet/scheme \
+       malsinet/lisps \
        mit-scheme "$@"
 #+END_SRC
 
@@ -905,7 +935,7 @@ docker run --rm -i \
        -v $(pwd):/app \
        -v ~/.ssh:/root/.ssh \
        -v /private/var/folders:/var/folders \
-       malsinet/scheme \
+       malsinet/lisps \
        guile "$@"
 #+END_SRC
 
@@ -919,8 +949,64 @@ docker run --rm -i \
        -v $(pwd):/app \
        -v ~/.ssh:/root/.ssh \
        -v /private/var/folders:/var/folders \
-       malsinet/scheme \
+       malsinet/lisps \
        racket "$@"
+#+END_SRC
+
+*** picolisp
+
+#+BEGIN_SRC sh :tangle build/bin/picolisp
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/lisps \
+       picolisp "$@"
+#+END_SRC
+
+*** newlisp
+
+#+BEGIN_SRC sh :tangle build/bin/newlisp
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/lisps \
+       newlisp "$@"
+#+END_SRC
+
+*** sbcl
+
+#+BEGIN_SRC sh :tangle build/bin/sbcl
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/lisps \
+       sbcl "$@"
+#+END_SRC
+
+*** slime
+
+#+BEGIN_SRC sh :tangle build/bin/slime
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+       -v /Users:/Users \
+       -v $(pwd):/app \
+       -v ~/.ssh:/root/.ssh \
+       -v /private/var/folders:/var/folders \
+       malsinet/lisps \
+       slime "$@"
 #+END_SRC
 
 ** pdflatex
