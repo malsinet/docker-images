@@ -209,7 +209,8 @@ CMD ["/bin/bash"]
 
 *** node
 
-La única diferencia con las imágenes oficiales es que agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen.
+- =$PATH= :: Se agrega la carpeta =/app/node_modules/.bin= al PATH de la imagen
+- prettier :: Se instala [[https://prettier.io][prettier]] globalmente
 
 Cuando se instalan paquetes con =npm install=, a veces se desea instalar comandos de consola, que se mantienen en la carpeta =./node_modules/.bin=. Mis [[Comandos Dockerizados][comandos dockerizados]] para npm y node montan la carpeta desde donde se lanza el comando como =/app= dentro del contenedor. Por lo tanto, si agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen, en los contenedores de node siempre van a estar disponibles los comandos de consola que se instalen con =npm install= sin necesidad de indicar el path absoluto del comando.
 
@@ -222,6 +223,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/app/node_modules/.bin
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+RUN npm install --global prettier
 
 WORKDIR /app
 
@@ -237,6 +239,7 @@ MAINTAINER Martin Alsinet <martin@alsinet>
 ENV SHELL=/bin/bash
 ENV PATH=$PATH:/app/node_modules/.bin
 RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+RUN npm install --global prettier
 
 WORKDIR /app
 
@@ -765,7 +768,7 @@ docker run --rm \
 #+BEGIN_SRC sh :tangle build/bin/yarn-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
@@ -781,7 +784,7 @@ docker run --rm \
 #+BEGIN_SRC sh :tangle build/bin/npm-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
@@ -797,7 +800,7 @@ docker run --rm \
 #+BEGIN_SRC sh :tangle build/bin/node-10
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
@@ -808,13 +811,27 @@ docker run --rm \
            node "$@"
 #+END_SRC
 
+**** prettier
+
+#+BEGIN_SRC sh :tangle build/bin/prettier-node-10
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           malsinet/node:10 \
+           prettier $@
+#+END_SRC
+
 *** 11
 **** yarn
 
 #+BEGIN_SRC sh :tangle build/bin/yarn-11
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm \
+docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
@@ -855,6 +872,20 @@ docker run --rm \
            -p 8080:8080 \
            malsinet/node:11 \
            node "$@"
+#+END_SRC
+
+**** prettier
+
+#+BEGIN_SRC sh :tangle build/bin/prettier-node-11
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           malsinet/node:11 \
+           prettier $@
 #+END_SRC
 
 ** lisps
