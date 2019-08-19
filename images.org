@@ -213,10 +213,10 @@ CMD ["/bin/bash"]
 
 Cuando se instalan paquetes con =npm install=, a veces se desea instalar comandos de consola, que se mantienen en la carpeta =./node_modules/.bin=. Mis [[Comandos Dockerizados][comandos dockerizados]] para npm y node montan la carpeta desde donde se lanza el comando como =/app= dentro del contenedor. Por lo tanto, si agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen, en los contenedores de node siempre van a estar disponibles los comandos de consola que se instalen con =npm install= sin necesidad de indicar el path absoluto del comando.
 
-**** Versión 11
+**** Versión 10
 
-#+BEGIN_SRC dockerfile :tangle build/node/11/Dockerfile
-FROM node:11-stretch
+#+BEGIN_SRC dockerfile :tangle build/node/10/Dockerfile
+FROM node:10-jessie
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -228,10 +228,10 @@ WORKDIR /app
 CMD ["npm", "start"]
 #+END_SRC
 
-**** Versión 10
+**** Versión 12
 
-#+BEGIN_SRC dockerfile :tangle build/node/10/Dockerfile
-FROM node:10-jessie
+#+BEGIN_SRC dockerfile :tangle build/node/12/Dockerfile
+FROM node:12-stretch
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -808,10 +808,10 @@ docker run --rm -i \
            node "$@"
 #+END_SRC
 
-*** 11
+*** 12
 **** yarn
 
-#+BEGIN_SRC sh :tangle build/bin/yarn-11
+#+BEGIN_SRC sh :tangle build/bin/yarn-12
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
@@ -821,13 +821,13 @@ docker run --rm -i \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:11 \
+           malsinet/node:12 \
            yarn $@
 #+END_SRC
 
 **** npm
 
-#+BEGIN_SRC sh :tangle build/bin/npm-11
+#+BEGIN_SRC sh :tangle build/bin/npm-12
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -837,13 +837,13 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:11 \
+           malsinet/node:12 \
            npm $@
 #+END_SRC
 
 **** node
 
-#+BEGIN_SRC sh :tangle build/bin/node-11
+#+BEGIN_SRC sh :tangle build/bin/node-12
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm \
@@ -853,7 +853,7 @@ docker run --rm \
            -e "NODE_PATH=/app/node_modules" \
            -p 3000:3000 \
            -p 8080:8080 \
-           malsinet/node:11 \
+           malsinet/node:12 \
            node "$@"
 #+END_SRC
 
