@@ -300,6 +300,34 @@ WORKDIR /app
 CMD ["java"]
 #+END_SRC
 
+**** 11-jre
+
+#+BEGIN_SRC dockerfile :tangle build/java/11-jre/Dockerfile
+FROM openjdk:11-jre
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
+#+END_SRC
+
+**** 11-jdk
+
+#+BEGIN_SRC dockerfile :tangle build/java/11-jdk/Dockerfile
+FROM openjdk:11-jdk
+MAINTAINER Martin Alsinet <martin@alsinet>
+
+ENV SHELL=/bin/bash
+RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
+
+WORKDIR /app
+
+CMD ["java"]
+#+END_SRC
+
 *** lisps
 
 Instalé cuatro implementaciones de Scheme y tres de Lisp en la misma imagen:
