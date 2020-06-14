@@ -103,7 +103,7 @@ CMD ["apache2-foreground"]
 **** composer
 
 #+BEGIN_SRC dockerfile :tangle build/php/composer/Dockerfile
-FROM composer:1.8
+FROM composer:1.10
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 WORKDIR /app
