@@ -362,63 +362,6 @@ RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 #+END_SRC
 
-*** Jupyter Notebook
-
-Jupyter Notebook es un entorno para Literate Programming, que permite escribir documentos con Markdown intercalado con bloques de texto que se ejecutan directamente dentro del documento.
-
-El soporte original de lenguajes de programación para Jupyter es Python, pero se pueden agregar motores para que soporte otros lenguajes de programación. En este caso le agrego soporte para ejecutar Javascript mediante nodejs.
-
-Basándonos en la imagen de python3.6 que ya tenemos construida instalamos además [[https://tuananh.org/2015/06/16/how-to-install-zeromq-on-ubuntu/][ZeroMQ]], [[https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions][nodejs]] y [[https://github.com/notablemind/jupyter-nodejs][Jupyter-nodejs]], que nos permite ejecutar código javascript dentro de Jupyter.
-
-#+BEGIN_SRC dockerfile :tangle build/jupyter/Dockerfile
-FROM malsinet/python:3.6
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update -q
-RUN apt-get install -y libtool pkg-config build-essential autoconf automake
-RUN apt-get install -y libzmq-dev curl
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-RUN pip3 install jupyter
-WORKDIR "/tmp"
-RUN git clone https://github.com/notablemind/jupyter-nodejs.git
-WORKDIR "/tmp/jupyter-nodejs"
-RUN mkdir -p /root/.ipython/kernels/nodejs/
-RUN npm install && node install.js
-RUN npm run build
-RUN npm run build-ext
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
-#+END_SRC
-
-**** TODO revisar nuevas imágenes de docker para jupyter
-
-- https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html
-
-- https://github.com/jupyter/docker-stacks
-
-Sería bueno tener una imagen mínima con distintos lenguajes de programación (Literate Programming) y otra con las bibliotecas para data science.
-
-*** Eve
-
-#+BEGIN_SRC dockerfile :tangle build/eve/Dockerfile
-FROM malsinet/node:8.9
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-ENV DEBIAN_FRONTEND noninteractive
-
-WORKDIR "/app"
-RUN git clone https://github.com/witheve/Eve.git
-WORKDIR "/app/Eve"
-RUN git checkout 0.2
-RUN npm install --unsafe-perm
-
-CMD ["npm", "start"]
-#+END_SRC
-
 * Comandos Dockerizados
 
 Estos comandos permiten utilizar las distintas herramientas sin "contaminar" la máquina local con la instalación de cientos de paquetes, como sucede, por ejemplo, cuando se instala python, php o nodejs con todas sus dependencias. Esto se logra con un script "lanzador" que ejecuta la utilidad dentro de un contenedor efímero (~docker run --rm~), que se borra luego de cada ejecución del comando. Todas las dependencias y paquetes quedan dentro de la imagen correspondiente.
@@ -933,25 +876,3 @@ docker run --rm \
        gnuplot $@
 #+END_SRC
 
-** jupyter
-
-#+BEGIN_SRC sh :tangle build/bin/jupyter
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -ti \
-       -p 8888:8888 \
-       -v $(pwd):/app \
-       -w /app \
-       malsinet/jupyter \
-       jupyter notebook --ip=0.0.0.0 --allow-root
-#+END_SRC
-
-** eve
-
-#+BEGIN_SRC sh :tangle build/bin/eve
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -ti \
-           -p 8080:8080 \
-           malsinet/eve
-#+END_SRC
