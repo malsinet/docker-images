@@ -135,26 +135,10 @@ WORKDIR /app
 CMD ["/bin/bash"]
 #+END_SRC
 
-**** 3.6
+**** 3.8
 
-#+BEGIN_SRC dockerfile :tangle build/python/3.6/Dockerfile
-FROM python:3.6
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-RUN pip install --upgrade pip
-RUN pip install virtualenv
-RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-ENV SHELL=/bin/bash
-
-WORKDIR /app
-
-CMD ["/bin/bash"]
-#+END_SRC
-
-**** 3.7
-
-#+BEGIN_SRC dockerfile :tangle build/python/3.7/Dockerfile
-FROM python:3.7
+#+BEGIN_SRC dockerfile :tangle build/python/3.8/Dockerfile
+FROM python:3.8
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN pip install --upgrade pip
@@ -548,10 +532,10 @@ docker run --rm -i \
            malsinet/python:2.7 virtualenv $@
 #+END_SRC
 
-*** 3.6
-**** python-3.6
+*** 3.8
+**** python-3.8
 
-#+BEGIN_SRC sh :tangle build/bin/python-3.6
+#+BEGIN_SRC sh :tangle build/bin/python-3.8
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -566,12 +550,12 @@ docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/python:3.6 $PYTHON "$@"
+           malsinet/python:3.8 $PYTHON "$@"
 #+END_SRC
 
-**** pip-3.6
+**** pip-3.8
 
-#+BEGIN_SRC sh :tangle build/bin/pip-3.6
+#+BEGIN_SRC sh :tangle build/bin/pip-3.8
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
@@ -586,71 +570,19 @@ docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/python:3.6 $PIP $@
+           malsinet/python:3.8 $PIP $@
 #+END_SRC
-**** virtualenv-3.6
 
-#+BEGIN_SRC sh :tangle build/bin/virtualenv-3.6
+**** virtualenv-3.8
+
+#+BEGIN_SRC sh :tangle build/bin/virtualenv-3.8
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/python:3.6 virtualenv $@
-#+END_SRC
-
-*** 3.7
-**** python-3.7
-
-#+BEGIN_SRC sh :tangle build/bin/python-3.7
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-
-ENV_PYTHON=./venv/bin/python
-if [ -x "$ENV_PYTHON" ]; then
-    PYTHON="/app/venv/bin/python"
-else 
-    PYTHON="python3"
-fi 
-
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/python:3.7 $PYTHON "$@"
-#+END_SRC
-
-**** pip-3.7
-
-#+BEGIN_SRC sh :tangle build/bin/pip-3.7
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-
-ENV_PIP=./venv/bin/pip
-if [ -x "$ENV_PIP" ]; then
-    PIP="/app/venv/bin/pip"
-else 
-    PIP="pip"
-fi 
-
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/python:3.7 $PIP $@
-#+END_SRC
-
-**** virtualenv-3.7
-
-#+BEGIN_SRC sh :tangle build/bin/virtualenv-3.7
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/python:3.7 virtualenv $@
+           malsinet/python:3.8 virtualenv $@
 #+END_SRC
 
 *** pytest
@@ -672,7 +604,7 @@ docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/python:3.6 $PYTEST $@
+           malsinet/python:3.8 $PYTEST $@
 #+END_SRC
 
 ** java
