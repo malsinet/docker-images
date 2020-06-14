@@ -80,50 +80,10 @@ EXPOSE 80
 CMD ["apache2-foreground"]
 #+END_SRC
 
-**** 7.1
+**** 7.4
 
-#+BEGIN_SRC dockerfile :tangle build/php/7.1/Dockerfile
-FROM php:7.1-apache
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-RUN apt-get update
-RUN apt-get install -y libpq-dev
-RUN a2enmod rewrite
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-ENV SHELL=/bin/bash
-ENV PATH=$PATH:/var/www/vendor/bin
-
-WORKDIR /var/www/html
-
-EXPOSE 80
-CMD ["apache2-foreground"]
-#+END_SRC
-
-**** 7.2
-
-#+BEGIN_SRC dockerfile :tangle build/php/7.2/Dockerfile
-FROM php:7.2-apache
-MAINTAINER Martin Alsinet <martin@alsinet>
-
-RUN apt-get update
-RUN apt-get install -y libpq-dev
-RUN a2enmod rewrite
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-RUN echo "alias ll='ls -alhG'" >> /root/.bashrc
-ENV SHELL=/bin/bash
-ENV PATH=$PATH:/var/www/vendor/bin
-
-WORKDIR /var/www/html
-
-EXPOSE 80
-CMD ["apache2-foreground"]
-#+END_SRC
-
-**** 7.3
-
-#+BEGIN_SRC dockerfile :tangle build/php/7.3/Dockerfile
-FROM php:7.3-apache
+#+BEGIN_SRC dockerfile :tangle build/php/7.4/Dockerfile
+FROM php:7.4-apache
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 RUN apt-get update
@@ -515,42 +475,16 @@ docker run --rm -i \
            php "$@"
 #+END_SRC
 
-*** 7.1
+*** 7.4
 
-#+BEGIN_SRC sh :tangle build/bin/php-7.1
+#+BEGIN_SRC sh :tangle build/bin/php-7.4
 #!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 docker run --rm -i \
            -v $(pwd):/app \
            -v ~/.ssh:/root/.ssh \
            -v /private/var/folders:/var/folders \
-           malsinet/php:7.1-apache \
-           php "$@"
-#+END_SRC
-
-*** 7.2
-
-#+BEGIN_SRC sh :tangle build/bin/php-7.2
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/php:7.2-apache \
-           php "$@"
-#+END_SRC
-
-*** 7.3
-
-#+BEGIN_SRC sh :tangle build/bin/php-7.3
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           malsinet/php:7.3-apache \
+           malsinet/php:7.4-apache \
            php "$@"
 #+END_SRC
 
