@@ -157,10 +157,10 @@ CMD ["/bin/bash"]
 
 Cuando se instalan paquetes con =npm install=, a veces se desea instalar comandos de consola, que se mantienen en la carpeta =./node_modules/.bin=. Mis [[Comandos Dockerizados][comandos dockerizados]] para npm y node montan la carpeta desde donde se lanza el comando como =/app= dentro del contenedor. Por lo tanto, si agrego la carpeta =/app/node_modules/.bin= al PATH de la imagen, en los contenedores de node siempre van a estar disponibles los comandos de consola que se instalen con =npm install= sin necesidad de indicar el path absoluto del comando.
 
-**** Versión 10
+**** Versión 12
 
-#+BEGIN_SRC dockerfile :tangle build/node/10/Dockerfile
-FROM node:10-jessie
+#+BEGIN_SRC dockerfile :tangle build/node/12/Dockerfile
+FROM node:12
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -172,10 +172,10 @@ WORKDIR /app
 CMD ["npm", "start"]
 #+END_SRC
 
-**** Versión 12
+**** Versión 14
 
-#+BEGIN_SRC dockerfile :tangle build/node/12/Dockerfile
-FROM node:12-stretch
+#+BEGIN_SRC dockerfile :tangle build/node/14/Dockerfile
+FROM node:14
 MAINTAINER Martin Alsinet <martin@alsinet>
 
 ENV SHELL=/bin/bash
@@ -653,55 +653,6 @@ docker run --rm \
 #+END_SRC
 
 ** node
-*** 10
-**** yarn
-
-#+BEGIN_SRC sh :tangle build/bin/yarn-10
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:10 \
-           yarn $@
-#+END_SRC
-
-**** npm
-
-#+BEGIN_SRC sh :tangle build/bin/npm-10
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:10 \
-           npm $@
-#+END_SRC
-
-**** node
-
-#+BEGIN_SRC sh :tangle build/bin/node-10
-#!/bin/sh
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-docker run --rm -i \
-           -v $(pwd):/app \
-           -v ~/.ssh:/root/.ssh \
-           -v /private/var/folders:/var/folders \
-           -e "NODE_PATH=/app/node_modules" \
-           -p 3000:3000 \
-           -p 8080:8080 \
-           malsinet/node:10 \
-           node "$@"
-#+END_SRC
-
 *** 12
 **** yarn
 
@@ -748,6 +699,55 @@ docker run --rm \
            -p 3000:3000 \
            -p 8080:8080 \
            malsinet/node:12 \
+           node "$@"
+#+END_SRC
+
+*** 14
+**** yarn
+
+#+BEGIN_SRC sh :tangle build/bin/yarn-14
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:14 \
+           yarn $@
+#+END_SRC
+
+**** npm
+
+#+BEGIN_SRC sh :tangle build/bin/npm-14
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:14 \
+           npm $@
+#+END_SRC
+
+**** node
+
+#+BEGIN_SRC sh :tangle build/bin/node-14
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+docker run --rm -i \
+           -v $(pwd):/app \
+           -v ~/.ssh:/root/.ssh \
+           -v /private/var/folders:/var/folders \
+           -e "NODE_PATH=/app/node_modules" \
+           -p 3000:3000 \
+           -p 8080:8080 \
+           malsinet/node:14 \
            node "$@"
 #+END_SRC
 
